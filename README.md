@@ -2,7 +2,7 @@
 
 Fast, searchable, dependency-free Console window for the Unity Editor.
 
-> **Status: pre-release.** Live log capture and the first window are in: a virtualized list with severity toggles, search, collapse and a detail pane. Clickable stack frames, persistence across reloads and the query language come next; follow the [milestones](https://github.com/alvaris924/unity-clarity-console/milestones).
+> **Status: pre-release.** Live log capture and the first window are in: a virtualized list with severity toggles, search, collapse, a detail pane with clickable stack frames that open your code editor, and context-object ping. Persistence across reloads and the query language come next; follow the [milestones](https://github.com/alvaris924/unity-clarity-console/milestones).
 
 ## What it will do
 

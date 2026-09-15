@@ -21,6 +21,7 @@ namespace ClarityConsole.UI
         private const long RefreshDelayMs = 50;
         private const long SearchDelayMs = 100;
         private const long CountsIntervalMs = 500;
+        private const double NoticeSeconds = 5;
 
         private ConsoleViewModel _viewModel;
         private MultiColumnListView _list;
@@ -30,7 +31,8 @@ namespace ClarityConsole.UI
         private ToolbarToggle _warningToggle;
         private ToolbarToggle _errorToggle;
         private ToolbarSearchField _searchField;
-        private TextField _detail;
+        private DetailView _detail;
+        private readonly SourceNavigator _navigator = new SourceNavigator();
         private Label _status;
         private Texture _logIcon;
         private Texture _warningIcon;
@@ -38,6 +40,8 @@ namespace ClarityConsole.UI
         private IVisualElementScheduledItem _refresh;
         private IVisualElementScheduledItem _searchDebounce;
         private bool _stickToBottom = true;
+        private string _notice;
+        private double _noticeUntil;
 
         [MenuItem("Window/Clarity Console")]
         public static void Open()
@@ -93,7 +97,8 @@ namespace ClarityConsole.UI
             split.AddToClassList("cc-split");
             _list = BuildList();
             split.Add(_list);
-            _detail = BuildDetail();
+            _detail = new DetailView();
+            _detail.FrameActivated += OpenFrame;
             split.Add(_detail);
             root.Add(split);
 
@@ -217,15 +222,8 @@ namespace ClarityConsole.UI
             });
 
             list.selectionChanged += OnSelectionChanged;
+            list.itemsChosen += OnItemsChosen;
             return list;
-        }
-
-        private static TextField BuildDetail()
-        {
-            var field = new TextField { multiline = true, isReadOnly = true };
-            field.AddToClassList("cc-detail");
-            field.verticalScrollerVisibility = ScrollerVisibility.Auto;
-            return field;
         }
 
         private static VisualElement MakeLabelCell()
@@ -272,17 +270,55 @@ namespace ClarityConsole.UI
 
         private void OnSelectionChanged(IEnumerable<object> selection)
         {
-            LogEntry entry = null;
-            foreach (object item in selection)
+            LogEntry entry = FirstEntry(selection);
+            _detail.Show(entry);
+            if (entry != null)
             {
-                entry = item as LogEntry;
-                break;
+                SourceNavigator.Ping(entry.Context);
+            }
+        }
+
+        private void OnItemsChosen(IEnumerable<object> chosen)
+        {
+            LogEntry entry = FirstEntry(chosen);
+            if (entry == null || entry.Kind == LogEntryKind.Marker)
+            {
+                return;
             }
 
-            string text = entry == null
-                ? string.Empty
-                : entry.StackTrace.Length == 0 ? entry.Message : entry.Message + "\n\n" + entry.StackTrace;
-            _detail.SetValueWithoutNotify(text);
+            if (entry.Trace.EntryFrame == null)
+            {
+                ShowNotice("No source location in this entry's stack trace.");
+            }
+            else
+            {
+                OpenFrame(entry.Trace.EntryFrame);
+            }
+        }
+
+        private void OpenFrame(TraceFrame frame)
+        {
+            if (!_navigator.TryOpen(frame))
+            {
+                ShowNotice("Could not open " + frame.FilePath + ":" + frame.Line);
+            }
+        }
+
+        private static LogEntry FirstEntry(IEnumerable<object> items)
+        {
+            foreach (object item in items)
+            {
+                return item as LogEntry;
+            }
+
+            return null;
+        }
+
+        private void ShowNotice(string text)
+        {
+            _notice = text;
+            _noticeUntil = EditorApplication.timeSinceStartup + NoticeSeconds;
+            UpdateStatus();
         }
 
         private void OnListScrolled(float value)
@@ -360,6 +396,13 @@ namespace ClarityConsole.UI
                 return;
             }
 
+            if (_notice != null && EditorApplication.timeSinceStartup < _noticeUntil)
+            {
+                _status.text = _notice;
+                return;
+            }
+
+            _notice = null;
             LogStore store = _viewModel.Store;
             _status.text = $"{store.Count:N0} of {store.Capacity:N0} entries   ·   {_viewModel.Visible.Count:N0} shown   ·   session {store.CurrentSession}";
         }
