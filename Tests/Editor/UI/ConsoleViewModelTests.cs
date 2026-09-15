@@ -40,6 +40,31 @@ namespace ClarityConsole.Tests.UI
         }
 
         [Test]
+        public void Search_UsesTheQueryLanguage_AndReportsErrors()
+        {
+            var store = new LogStore(capacity: 16) { ChannelExtractor = new ChannelExtractor() };
+            using var model = new ConsoleViewModel(store);
+            store.Append(Entry(LogSeverity.Error, "[Net] request timeout 8000ms"));
+            store.Append(Entry(LogSeverity.Log, "[Net] request timeout, retry scheduled"));
+            store.Append(Entry(LogSeverity.Log, "[UI] all good"));
+
+            model.Search = "timeout -\"retry scheduled\"";
+            Assert.That(model.Visible.Select(e => e.Message), Is.EqualTo(new[] { "[Net] request timeout 8000ms" }));
+            Assert.That(model.QueryError, Is.Null);
+
+            model.Search = "sev:error OR tag:UI";
+            Assert.That(model.Visible.Count, Is.EqualTo(2));
+
+            model.Search = "/unclosed";
+            Assert.That(model.QueryError, Is.Not.Null);
+            Assert.That(model.Visible, Is.Empty, "a malformed query matches nothing");
+
+            model.Search = string.Empty;
+            Assert.That(model.QueryError, Is.Null);
+            Assert.That(model.Visible.Count, Is.EqualTo(3));
+        }
+
+        [Test]
         public void Search_IsCaseInsensitiveSubstring_AndRebuilds()
         {
             var store = new LogStore(capacity: 16);

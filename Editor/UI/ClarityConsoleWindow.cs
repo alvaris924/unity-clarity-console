@@ -139,6 +139,10 @@ namespace ClarityConsole.UI
 
             _searchField = new ToolbarSearchField();
             _searchField.AddToClassList("cc-search");
+            _searchField.tooltip =
+                "Search terms are joined by AND. \"quoted phrase\" matches exactly, -term excludes, " +
+                "/regex/i matches a pattern, sev:error,warn and tag:PlayFab* filter, in:stack also searches " +
+                "stack traces, and A OR B matches either.";
             _searchField.RegisterValueChangedCallback(_ => ScheduleSearch());
             toolbar.Add(_searchField);
 
@@ -386,11 +390,18 @@ namespace ClarityConsole.UI
         {
             if (_searchDebounce == null)
             {
-                _searchDebounce = rootVisualElement.schedule.Execute(() => _viewModel.Search = _searchField.value);
+                _searchDebounce = rootVisualElement.schedule.Execute(ApplySearch);
                 _searchDebounce.Pause();
             }
 
             _searchDebounce.ExecuteLater(SearchDelayMs);
+        }
+
+        private void ApplySearch()
+        {
+            _viewModel.Search = _searchField.value;
+            _searchField.EnableInClassList("cc-search-invalid", _viewModel.QueryError != null);
+            UpdateStatus();
         }
 
         private void UpdateCounts()
@@ -422,6 +433,15 @@ namespace ClarityConsole.UI
             }
 
             _notice = null;
+
+            if (_viewModel.QueryError != null)
+            {
+                _status.text = _viewModel.QueryError;
+                _status.AddToClassList("cc-status-error");
+                return;
+            }
+
+            _status.RemoveFromClassList("cc-status-error");
             LogStore store = _viewModel.Store;
             double journalMb = LogCaptureBootstrap.Journal.SizeBytes / (1024.0 * 1024.0);
             _status.text = $"{store.Count:N0} of {store.Capacity:N0} entries   ·   {_viewModel.Visible.Count:N0} shown   ·   session {store.CurrentSession}   ·   journal {journalMb:0.0} MB";
