@@ -9,5 +9,6 @@ updates:
       include: scope
     labels:
       - chore
+      - dependencies
       - "area: ci"
       - skip-changelog
