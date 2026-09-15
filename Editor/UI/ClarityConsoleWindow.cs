@@ -76,6 +76,7 @@ namespace ClarityConsole.UI
                 return;
             }
 
+            ClarityConsoleSettings.Changed -= OnSettingsChanged;
             _viewModel.Changed -= OnViewChanged;
             _viewModel.Dispose();
             _viewModel = null;
@@ -107,6 +108,8 @@ namespace ClarityConsole.UI
             _detail = new DetailView();
             _detail.FrameActivated += OpenFrame;
             _detail.SnippetProvider = TryGetSnippet;
+            _detail.FrameFilter = ClarityConsoleSettings.instance.CreateFrameFilter();
+            ClarityConsoleSettings.Changed += OnSettingsChanged;
             split.Add(_detail);
             root.Add(split);
 
@@ -299,13 +302,14 @@ namespace ClarityConsole.UI
                 return;
             }
 
-            if (entry.Trace.EntryFrame == null)
+            TraceFrame frame = FrameGrouper.FindEntryFrame(entry.Trace, _detail.FrameFilter);
+            if (frame == null)
             {
                 ShowNotice("No source location in this entry's stack trace.");
             }
             else
             {
-                OpenFrame(entry.Trace.EntryFrame);
+                OpenFrame(frame);
             }
         }
 
@@ -357,6 +361,18 @@ namespace ClarityConsole.UI
         private void OnListScrolled(float value)
         {
             _stickToBottom = value >= _listScrollView.verticalScroller.highValue - RowHeight;
+        }
+
+        private void OnSettingsChanged()
+        {
+            if (_detail == null)
+            {
+                return;
+            }
+
+            _detail.FrameFilter = ClarityConsoleSettings.instance.CreateFrameFilter();
+            _sources.Clear();
+            _detail.Show(FirstEntry(_list.selectedItems));
         }
 
         private void OnViewChanged(ViewChange change)

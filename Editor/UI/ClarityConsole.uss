@@ -149,6 +149,15 @@
     -unity-font-style: bold;
 }
 
+.cc-frame-hidden {
+    color: var(--cc-status);
+    -unity-font-style: italic;
+}
+
+.cc-frame-hidden:hover {
+    background-color: rgba(127, 127, 127, 0.15);
+}
+
 .cc-frame-selected {
     background-color: rgba(127, 127, 127, 0.18);
 }

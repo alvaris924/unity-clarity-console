@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ### Added
 
+- Frame folding: runs of infrastructure frames in the detail pane collapse into one row that names what it hid, for example "3 frames hidden (UnityEngine, Cysharp)", and unfold on click. The engine, the Editor, the runtime and this package fold by default; projects add their own wrappers as type-name prefixes in Project Settings. Opening an entry now lands on the first frame that is not folded, so a project's logging wrapper is skipped as well.
 - Source preview: selecting a stack frame shows the lines around it with the frame's own line highlighted, read straight from disk and re-read when the file changes. Clicking a frame now selects and previews it; double-clicking it, or the preview, opens the file in the code editor. The number of lines is configurable in Project Settings.
 - Query language in the search field: terms are joined by AND, `"quoted phrases"` match exactly, `-term` excludes, `/regex/i` matches a pattern, `sev:error,warn` and `tag:PlayFab*` filter, `in:stack` also searches stack traces, and `A OR B` matches either. A malformed query explains itself in the status bar instead of failing silently.
 - Channels: messages that start with a tag such as `[PlayFabCBSManager]` are grouped into channels, shown as a row of chips with live counts under the toolbar. Clicking chips narrows the list to those channels, and the pattern is configurable in Project Settings under Clarity Console.
