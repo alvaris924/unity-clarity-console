@@ -8,6 +8,8 @@ namespace ClarityConsole.Settings
     /// <summary>The Project Settings page for Clarity Console.</summary>
     internal static class ClarityConsoleSettingsProvider
     {
+        private const string WatchExample = "[watch:PlayerHP] 87";
+
         [SettingsProvider]
         public static SettingsProvider Create()
         {
@@ -51,6 +53,24 @@ namespace ClarityConsole.Settings
             root.Add(field);
             root.Add(status);
             UpdateStatus(status, field.value);
+
+            var watchTitle = new Label("Watch rows");
+            watchTitle.style.unityFontStyleAndWeight = UnityEngine.FontStyle.Bold;
+            watchTitle.style.marginTop = 12;
+            watchTitle.style.marginBottom = 4;
+            root.Add(watchTitle);
+
+            var watchHelp = new Label(
+                "Messages that start with a watch key, " + WatchExample + " by default, replace each other " +
+                "in the window instead of piling up, so a value you log every frame reads as one line that " +
+                "changes. Leave the pattern empty to turn this off.");
+            watchHelp.style.whiteSpace = WhiteSpace.Normal;
+            watchHelp.style.marginBottom = 4;
+            root.Add(watchHelp);
+
+            var watch = new TextField("Watch pattern") { value = ClarityConsoleSettings.instance.WatchPattern };
+            watch.RegisterValueChangedCallback(evt => ClarityConsoleSettings.instance.WatchPattern = evt.newValue);
+            root.Add(watch);
 
             var frames = new Label("Stack frames");
             frames.style.unityFontStyleAndWeight = UnityEngine.FontStyle.Bold;
@@ -102,6 +122,7 @@ namespace ClarityConsole.Settings
             {
                 ClarityConsoleSettings.instance.ResetToDefaults();
                 field.SetValueWithoutNotify(ClarityConsoleSettings.instance.ChannelPattern);
+                watch.SetValueWithoutNotify(ClarityConsoleSettings.instance.WatchPattern);
                 radius.SetValueWithoutNotify(ClarityConsoleSettings.instance.SourcePreviewRadius);
                 hideEngine.SetValueWithoutNotify(ClarityConsoleSettings.instance.HideEngineFrames);
                 prefixes.SetValueWithoutNotify(ClarityConsoleSettings.instance.HiddenFramePrefixes);

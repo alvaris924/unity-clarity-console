@@ -64,6 +64,12 @@ namespace ClarityConsole.Core
         /// </summary>
         public string Channel { get; internal set; } = string.Empty;
 
+        /// <summary>
+        /// Watch key from a <c>[watch:Name]</c> prefix, or empty. Entries sharing a key replace each other
+        /// in the window. Assigned by <see cref="LogStore"/> on insert, like <see cref="Channel"/>.
+        /// </summary>
+        public string WatchKey { get; internal set; } = string.Empty;
+
         /// <summary>The stack trace split into frames. Parsed on first access and cached; never on the capture path.</summary>
         public ParsedTrace Trace => _trace ?? (_trace = StackTraceParser.Parse(StackTrace));
 

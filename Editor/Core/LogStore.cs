@@ -48,6 +48,9 @@ namespace ClarityConsole.Core
         /// <summary>Assigns <see cref="LogEntry.Channel"/> on insert. Null leaves every channel empty.</summary>
         public ChannelExtractor ChannelExtractor { get; set; }
 
+        /// <summary>Assigns <see cref="LogEntry.WatchKey"/> on insert. Null leaves every key empty.</summary>
+        public WatchExtractor WatchExtractor { get; set; }
+
         public IEnumerable<LogEntry> Entries => _entries;
 
         /// <summary>Retained log entries per channel, empty channels excluded. Live view, do not mutate.</summary>
@@ -108,6 +111,7 @@ namespace ClarityConsole.Core
             foreach (LogEntry entry in _entries)
             {
                 entry.Channel = ChannelFor(entry);
+                entry.WatchKey = WatchKeyFor(entry);
                 CountChannel(entry.Channel, 1);
             }
 
@@ -126,6 +130,7 @@ namespace ClarityConsole.Core
         private void Insert(LogEntry entry)
         {
             entry.Channel = ChannelFor(entry);
+            entry.WatchKey = WatchKeyFor(entry);
 
             if (_entries.Append(entry, out LogEntry evicted))
             {
@@ -150,6 +155,13 @@ namespace ClarityConsole.Core
         {
             return entry.Kind == LogEntryKind.Log && ChannelExtractor != null
                 ? ChannelExtractor.Extract(entry.Message)
+                : string.Empty;
+        }
+
+        private string WatchKeyFor(LogEntry entry)
+        {
+            return entry.Kind == LogEntryKind.Log && WatchExtractor != null
+                ? WatchExtractor.Extract(entry.Message)
                 : string.Empty;
         }
 

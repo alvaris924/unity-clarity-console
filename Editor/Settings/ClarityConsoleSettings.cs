@@ -26,6 +26,9 @@ namespace ClarityConsole.Settings
         private string _channelPattern = ChannelExtractor.DefaultPattern;
 
         [SerializeField]
+        private string _watchPattern = WatchExtractor.DefaultPattern;
+
+        [SerializeField]
         private int _sourcePreviewRadius = SourceCache.DefaultRadius;
 
         [SerializeField]
@@ -110,6 +113,32 @@ namespace ClarityConsole.Settings
             }
         }
 
+        /// <summary>
+        /// Regex whose first group names a watch key. Entries sharing a key replace each other in the
+        /// window instead of piling up. Empty turns watch rows off.
+        /// </summary>
+        public string WatchPattern
+        {
+            get => _watchPattern ?? string.Empty;
+            set
+            {
+                string pattern = value ?? string.Empty;
+                if (_watchPattern == pattern)
+                {
+                    return;
+                }
+
+                _watchPattern = pattern;
+                Persist();
+            }
+        }
+
+        /// <summary>The watch extractor these settings describe, or null when watch rows are off.</summary>
+        public WatchExtractor CreateWatchExtractor()
+        {
+            return WatchPattern.Length == 0 ? null : new WatchExtractor(WatchPattern);
+        }
+
         /// <summary>Rules that silence entries in the window. Edit through the methods below so the change is saved.</summary>
         public IReadOnlyList<IgnoreRuleSetting> IgnoreRules => _ignoreRules;
 
@@ -189,6 +218,7 @@ namespace ClarityConsole.Settings
         public void ResetToDefaults()
         {
             _channelPattern = ChannelExtractor.DefaultPattern;
+            _watchPattern = WatchExtractor.DefaultPattern;
             _sourcePreviewRadius = SourceCache.DefaultRadius;
             _hideEngineFrames = true;
             _hiddenFramePrefixes = string.Empty;
