@@ -1,0 +1,18 @@
+{
+  "name": "ClarityConsole.Capture",
+  "rootNamespace": "ClarityConsole.Capture",
+  "references": [
+    "ClarityConsole.Core"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

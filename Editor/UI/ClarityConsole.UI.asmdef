@@ -1,0 +1,21 @@
+{
+  "name": "ClarityConsole.UI",
+  "rootNamespace": "ClarityConsole.UI",
+  "references": [
+    "ClarityConsole.Core",
+    "ClarityConsole.Capture",
+    "ClarityConsole.Settings",
+    "ClarityConsole.Extensions"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
