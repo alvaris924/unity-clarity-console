@@ -404,7 +404,8 @@ namespace ClarityConsole.UI
 
             _notice = null;
             LogStore store = _viewModel.Store;
-            _status.text = $"{store.Count:N0} of {store.Capacity:N0} entries   ·   {_viewModel.Visible.Count:N0} shown   ·   session {store.CurrentSession}";
+            double journalMb = LogCaptureBootstrap.Journal.SizeBytes / (1024.0 * 1024.0);
+            _status.text = $"{store.Count:N0} of {store.Capacity:N0} entries   ·   {_viewModel.Visible.Count:N0} shown   ·   session {store.CurrentSession}   ·   journal {journalMb:0.0} MB";
         }
 
         private void LoadIcons()

@@ -55,7 +55,44 @@ namespace ClarityConsole.Core
             }
 
             entry.AssignSequence(_nextId++, CurrentSession);
+            Insert(entry);
+            EntryAppended?.Invoke(entry);
+        }
 
+        /// <summary>
+        /// Re-inserts an entry read back from the journal, keeping its id and session. Raises no append
+        /// event, so a journal attached afterwards never writes restored entries twice. The id sequence
+        /// and the current session continue after the highest values restored.
+        /// </summary>
+        public void Restore(LogEntry entry)
+        {
+            if (entry == null)
+            {
+                throw new ArgumentNullException(nameof(entry));
+            }
+
+            Insert(entry);
+            if (entry.Id >= _nextId)
+            {
+                _nextId = entry.Id + 1;
+            }
+
+            if (entry.Session > CurrentSession)
+            {
+                CurrentSession = entry.Session;
+            }
+        }
+
+        /// <summary>Drops every retained entry. Sequence numbers keep counting so ids stay unique.</summary>
+        public void Clear()
+        {
+            _entries.Clear();
+            Array.Clear(_severityCounts, 0, _severityCounts.Length);
+            Cleared?.Invoke();
+        }
+
+        private void Insert(LogEntry entry)
+        {
             if (_entries.Append(entry, out LogEntry evicted))
             {
                 if (evicted.Kind == LogEntryKind.Log)
@@ -70,16 +107,6 @@ namespace ClarityConsole.Core
             {
                 _severityCounts[(int)entry.Severity]++;
             }
-
-            EntryAppended?.Invoke(entry);
-        }
-
-        /// <summary>Drops every retained entry. Sequence numbers keep counting so ids stay unique.</summary>
-        public void Clear()
-        {
-            _entries.Clear();
-            Array.Clear(_severityCounts, 0, _severityCounts.Length);
-            Cleared?.Invoke();
         }
     }
 }
