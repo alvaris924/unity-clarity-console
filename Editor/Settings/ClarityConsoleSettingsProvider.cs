@@ -67,11 +67,27 @@ namespace ClarityConsole.Settings
             radius.RegisterValueChangedCallback(evt => ClarityConsoleSettings.instance.SourcePreviewRadius = evt.newValue);
             root.Add(radius);
 
+            var hideEngine = new Toggle("Fold engine frames")
+            {
+                value = ClarityConsoleSettings.instance.HideEngineFrames,
+            };
+            hideEngine.tooltip = "Fold frames from the engine, the Editor, the runtime and this package away from the stack, so your own code is what you see first.";
+            hideEngine.RegisterValueChangedCallback(evt => ClarityConsoleSettings.instance.HideEngineFrames = evt.newValue);
+            root.Add(hideEngine);
+
+            var prefixes = new TextField("Also fold types starting with") { multiline = true, value = ClarityConsoleSettings.instance.HiddenFramePrefixes };
+            prefixes.tooltip = "One type-name prefix per line, for example Cysharp.Threading.Tasks. Lines starting with # are comments.";
+            prefixes.style.minHeight = 54;
+            prefixes.RegisterValueChangedCallback(evt => ClarityConsoleSettings.instance.HiddenFramePrefixes = evt.newValue);
+            root.Add(prefixes);
+
             var reset = new Button(() =>
             {
                 ClarityConsoleSettings.instance.ResetToDefaults();
                 field.SetValueWithoutNotify(ClarityConsoleSettings.instance.ChannelPattern);
                 radius.SetValueWithoutNotify(ClarityConsoleSettings.instance.SourcePreviewRadius);
+                hideEngine.SetValueWithoutNotify(ClarityConsoleSettings.instance.HideEngineFrames);
+                prefixes.SetValueWithoutNotify(ClarityConsoleSettings.instance.HiddenFramePrefixes);
                 UpdateStatus(status, field.value);
             })
             {

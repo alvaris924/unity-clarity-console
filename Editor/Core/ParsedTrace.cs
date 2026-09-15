@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace ClarityConsole.Core
@@ -10,18 +11,24 @@ namespace ClarityConsole.Core
         public ParsedTrace(IReadOnlyList<TraceFrame> frames)
         {
             Frames = frames;
-            EntryFrame = FindEntryFrame(frames);
+            EntryFrame = ChooseEntryFrame(frames);
         }
 
         public IReadOnlyList<TraceFrame> Frames { get; }
 
         /// <summary>
-        /// The frame to open on double-click: the first located frame under <c>Assets/</c>, otherwise the first
-        /// located frame outside the engine and the package cache, otherwise any located frame, otherwise null.
+        /// The frame to open on double-click, ignoring any user-configured noise rules. Callers that have
+        /// a <see cref="FrameFilter"/> should use <see cref="FrameGrouper.FindEntryFrame"/> instead, so a
+        /// project's own logging wrapper is skipped as well.
         /// </summary>
         public TraceFrame EntryFrame { get; }
 
-        private static TraceFrame FindEntryFrame(IReadOnlyList<TraceFrame> frames)
+        /// <summary>
+        /// Picks the frame a reader most likely wants: the first located frame under <c>Assets/</c>,
+        /// otherwise the first located frame outside the engine and the package cache, otherwise any
+        /// located frame, otherwise null.
+        /// </summary>
+        internal static TraceFrame ChooseEntryFrame(IReadOnlyList<TraceFrame> frames)
         {
             TraceFrame outsideEngine = null;
             TraceFrame anyLocated = null;
@@ -40,12 +47,12 @@ namespace ClarityConsole.Core
                     continue;
                 }
 
-                if (frame.FilePath.StartsWith("Assets/", System.StringComparison.Ordinal))
+                if (frame.FilePath.StartsWith("Assets/", StringComparison.Ordinal))
                 {
                     return frame;
                 }
 
-                if (outsideEngine == null && !frame.FilePath.StartsWith("Library/", System.StringComparison.Ordinal))
+                if (outsideEngine == null && !frame.FilePath.StartsWith("Library/", StringComparison.Ordinal))
                 {
                     outsideEngine = frame;
                 }

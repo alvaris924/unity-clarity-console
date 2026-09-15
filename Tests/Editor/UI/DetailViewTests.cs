@@ -106,6 +106,60 @@ namespace ClarityConsole.Tests.UI
             Assert.That(view.IsPreviewVisible, Is.False);
         }
 
+        [Test]
+        public void Show_WithAFrameFilter_FoldsInfrastructureRuns()
+        {
+            var view = new DetailView
+            {
+                FrameFilter = new FrameFilter(hideEngineFrames: true, new[] { "Game.Logging." }),
+            };
+
+            view.Show(Entry("boom", Trace(
+                "UnityEngine.Debug:Log (object)",
+                "Game.Logging.Log:Info () (at Assets/Game/Logging/Log.cs:10)",
+                "Game.Boss:Hit () (at Assets/Game/Boss.cs:88)",
+                "UnityEngine.MonoBehaviour:Update ()")));
+
+            Assert.That(view.FrameRowCount, Is.EqualTo(3), "two folded runs and the user's frame");
+            Assert.That(view.HiddenFrameCount, Is.EqualTo(3));
+            Label folded = view.Query<Label>(className: DetailView.FrameHiddenClass).First();
+            Assert.That(folded.text, Is.EqualTo("2 frames hidden (UnityEngine, Game)"));
+        }
+
+        [Test]
+        public void ExpandGroup_ShowsTheFoldedFrames_AndKeepsTheSelection()
+        {
+            var view = new DetailView { FrameFilter = new FrameFilter(hideEngineFrames: true, null) };
+            LogEntry entry = Entry("boom", Trace(
+                "UnityEngine.Debug:Log (object)",
+                "UnityEngine.Logger:Log ()",
+                "Game.Boss:Hit () (at Assets/Game/Boss.cs:88)"));
+            view.Show(entry);
+            TraceFrame selected = view.SelectedFrame;
+
+            view.ExpandGroup(0);
+
+            Assert.That(view.HiddenFrameCount, Is.EqualTo(0));
+            Assert.That(view.FrameRowCount, Is.EqualTo(3));
+            Assert.That(view.Query<Label>(className: DetailView.FrameHiddenClass).ToList(), Is.Empty);
+            Assert.That(view.SelectedFrame, Is.SameAs(selected));
+            Assert.That(view.Query<Label>(className: DetailView.FrameSelectedClass).ToList().Count, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void SummariseHidden_NamesUpToTwoRoots_AndAgreesOnSingular()
+        {
+            ParsedTrace trace = StackTraceParser.Parse(Trace(
+                "UnityEngine.Debug:Log (object)",
+                "System.Reflection.MethodBase:Invoke ()",
+                "NUnit.Framework.Internal.Runner:Run ()"));
+            var all = new FrameGroup(true, trace.Frames);
+            var one = new FrameGroup(true, new[] { trace.Frames[0] });
+
+            Assert.That(DetailView.SummariseHidden(all), Is.EqualTo("3 frames hidden (UnityEngine, System)"));
+            Assert.That(DetailView.SummariseHidden(one), Is.EqualTo("1 frame hidden (UnityEngine)"));
+        }
+
         private static string Trace(params string[] frames)
         {
             return string.Join(Environment.NewLine, frames);
