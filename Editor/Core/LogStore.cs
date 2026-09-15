@@ -24,6 +24,9 @@ namespace ClarityConsole.Core
 
         public event Action<LogEntry> EntryAppended;
 
+        /// <summary>Raised when the buffer overwrote its oldest entry to make room for a new one.</summary>
+        public event Action<LogEntry> EntryEvicted;
+
         public event Action Cleared;
 
         public int Count => _entries.Count;
@@ -53,9 +56,14 @@ namespace ClarityConsole.Core
 
             entry.AssignSequence(_nextId++, CurrentSession);
 
-            if (_entries.Append(entry, out LogEntry evicted) && evicted.Kind == LogEntryKind.Log)
+            if (_entries.Append(entry, out LogEntry evicted))
             {
-                _severityCounts[(int)evicted.Severity]--;
+                if (evicted.Kind == LogEntryKind.Log)
+                {
+                    _severityCounts[(int)evicted.Severity]--;
+                }
+
+                EntryEvicted?.Invoke(evicted);
             }
 
             if (entry.Kind == LogEntryKind.Log)

@@ -1,0 +1,395 @@
+using System;
+using System.Collections.Generic;
+using ClarityConsole.Capture;
+using ClarityConsole.Core;
+using UnityEditor;
+using UnityEditor.UIElements;
+using UnityEngine;
+using UnityEngine.UIElements;
+
+namespace ClarityConsole.UI
+{
+    /// <summary>
+    /// The console window: a virtualized multi-column list over <see cref="ConsoleViewModel"/>, severity
+    /// toggles with live counts, search, collapse, a detail pane and a status bar. The element tree is
+    /// built in C# so Unity 2022.3 and 6000.x share one code path.
+    /// </summary>
+    internal sealed class ClarityConsoleWindow : EditorWindow
+    {
+        private const string StyleSheetPath = "Packages/com.alvaris.clarity-console/Editor/UI/ClarityConsole.uss";
+        private const int RowHeight = 20;
+        private const long RefreshDelayMs = 50;
+        private const long SearchDelayMs = 100;
+        private const long CountsIntervalMs = 500;
+
+        private ConsoleViewModel _viewModel;
+        private MultiColumnListView _list;
+        private ScrollView _listScrollView;
+        private ToolbarToggle _collapseToggle;
+        private ToolbarToggle _logToggle;
+        private ToolbarToggle _warningToggle;
+        private ToolbarToggle _errorToggle;
+        private ToolbarSearchField _searchField;
+        private TextField _detail;
+        private Label _status;
+        private Texture _logIcon;
+        private Texture _warningIcon;
+        private Texture _errorIcon;
+        private IVisualElementScheduledItem _refresh;
+        private IVisualElementScheduledItem _searchDebounce;
+        private bool _stickToBottom = true;
+
+        [MenuItem("Window/Clarity Console")]
+        public static void Open()
+        {
+            ClarityConsoleWindow window = GetWindow<ClarityConsoleWindow>();
+            window.titleContent = new GUIContent("Clarity Console");
+            window.Show();
+        }
+
+        public ConsoleViewModel ViewModel => _viewModel;
+
+        /// <summary>Applies pending view-model changes to the list immediately. Test hook.</summary>
+        internal void RefreshNow()
+        {
+            FlushRefresh();
+        }
+
+        private void OnEnable()
+        {
+            titleContent = new GUIContent("Clarity Console");
+            _viewModel = new ConsoleViewModel(LogCaptureBootstrap.Store);
+            _viewModel.Changed += OnViewChanged;
+        }
+
+        private void OnDisable()
+        {
+            if (_viewModel == null)
+            {
+                return;
+            }
+
+            _viewModel.Changed -= OnViewChanged;
+            _viewModel.Dispose();
+            _viewModel = null;
+        }
+
+        private void CreateGUI()
+        {
+            LoadIcons();
+
+            VisualElement root = rootVisualElement;
+            root.AddToClassList("cc-root");
+            root.AddToClassList(EditorGUIUtility.isProSkin ? "cc-dark" : "cc-light");
+            var styleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>(StyleSheetPath);
+            if (styleSheet != null)
+            {
+                root.styleSheets.Add(styleSheet);
+            }
+
+            root.Add(BuildToolbar());
+
+            var split = new TwoPaneSplitView(1, 140, TwoPaneSplitViewOrientation.Vertical);
+            split.AddToClassList("cc-split");
+            _list = BuildList();
+            split.Add(_list);
+            _detail = BuildDetail();
+            split.Add(_detail);
+            root.Add(split);
+
+            _status = new Label();
+            _status.AddToClassList("cc-status");
+            root.Add(_status);
+
+            _listScrollView = _list.Q<ScrollView>();
+            if (_listScrollView != null)
+            {
+                _listScrollView.verticalScroller.valueChanged += OnListScrolled;
+            }
+
+            _list.itemsSource = _viewModel.Visible;
+            root.schedule.Execute(UpdateCounts).Every(CountsIntervalMs);
+            UpdateCounts();
+            RequestRefresh();
+        }
+
+        private Toolbar BuildToolbar()
+        {
+            var toolbar = new Toolbar();
+            toolbar.AddToClassList("cc-toolbar");
+
+            toolbar.Add(new ToolbarButton(() => _viewModel.Store.Clear()) { text = "Clear" });
+
+            _collapseToggle = new ToolbarToggle { text = "Collapse" };
+            _collapseToggle.RegisterValueChangedCallback(evt => _viewModel.Collapse = evt.newValue);
+            toolbar.Add(_collapseToggle);
+
+            toolbar.Add(new ToolbarSpacer { flex = true });
+
+            _searchField = new ToolbarSearchField();
+            _searchField.AddToClassList("cc-search");
+            _searchField.RegisterValueChangedCallback(_ => ScheduleSearch());
+            toolbar.Add(_searchField);
+
+            _logToggle = BuildSeverityToggle(_logIcon, "cc-toggle-log", visible => _viewModel.SetSeverityVisible(LogSeverity.Log, visible));
+            _warningToggle = BuildSeverityToggle(_warningIcon, "cc-toggle-warning", visible => _viewModel.SetSeverityVisible(LogSeverity.Warning, visible));
+            _errorToggle = BuildSeverityToggle(_errorIcon, "cc-toggle-error", visible =>
+            {
+                _viewModel.SetSeverityVisible(LogSeverity.Error, visible);
+                _viewModel.SetSeverityVisible(LogSeverity.Exception, visible);
+                _viewModel.SetSeverityVisible(LogSeverity.Assert, visible);
+            });
+            toolbar.Add(_logToggle);
+            toolbar.Add(_warningToggle);
+            toolbar.Add(_errorToggle);
+
+            return toolbar;
+        }
+
+        private static ToolbarToggle BuildSeverityToggle(Texture icon, string className, Action<bool> onChanged)
+        {
+            var toggle = new ToolbarToggle { value = true, text = "0" };
+            toggle.AddToClassList("cc-toggle");
+            toggle.AddToClassList(className);
+            if (icon != null)
+            {
+                var image = new Image { image = icon };
+                image.AddToClassList("cc-toggle-icon");
+                toggle.Insert(0, image);
+            }
+
+            toggle.RegisterValueChangedCallback(evt => onChanged(evt.newValue));
+            return toggle;
+        }
+
+        private MultiColumnListView BuildList()
+        {
+            var list = new MultiColumnListView
+            {
+                fixedItemHeight = RowHeight,
+                selectionType = SelectionType.Single,
+                showAlternatingRowBackgrounds = AlternatingRowBackground.ContentOnly,
+            };
+            list.AddToClassList("cc-list");
+
+            list.columns.Add(new Column
+            {
+                name = "severity",
+                title = string.Empty,
+                width = 24,
+                resizable = false,
+                makeCell = MakeIconCell,
+                bindCell = BindSeverityCell,
+            });
+            list.columns.Add(new Column
+            {
+                name = "time",
+                title = "Time",
+                width = 96,
+                makeCell = MakeLabelCell,
+                bindCell = (cell, index) => ((Label)cell).text = _viewModel.Visible[index].TimestampUtc.ToLocalTime().ToString("HH:mm:ss.fff"),
+            });
+            list.columns.Add(new Column
+            {
+                name = "frame",
+                title = "Frame",
+                width = 64,
+                makeCell = MakeLabelCell,
+                bindCell = BindFrameCell,
+            });
+            list.columns.Add(new Column
+            {
+                name = "message",
+                title = "Message",
+                minWidth = 200,
+                stretchable = true,
+                makeCell = MakeLabelCell,
+                bindCell = BindMessageCell,
+            });
+            list.columns.Add(new Column
+            {
+                name = "count",
+                title = string.Empty,
+                width = 48,
+                resizable = false,
+                makeCell = MakeLabelCell,
+                bindCell = BindCountCell,
+            });
+
+            list.selectionChanged += OnSelectionChanged;
+            return list;
+        }
+
+        private static TextField BuildDetail()
+        {
+            var field = new TextField { multiline = true, isReadOnly = true };
+            field.AddToClassList("cc-detail");
+            field.verticalScrollerVisibility = ScrollerVisibility.Auto;
+            return field;
+        }
+
+        private static VisualElement MakeLabelCell()
+        {
+            var label = new Label();
+            label.AddToClassList("cc-cell");
+            return label;
+        }
+
+        private static VisualElement MakeIconCell()
+        {
+            var image = new Image();
+            image.AddToClassList("cc-cell-icon");
+            return image;
+        }
+
+        private void BindSeverityCell(VisualElement cell, int index)
+        {
+            LogEntry entry = _viewModel.Visible[index];
+            ((Image)cell).image = entry.Kind == LogEntryKind.Marker ? null : IconFor(entry.Severity);
+        }
+
+        private void BindFrameCell(VisualElement cell, int index)
+        {
+            LogEntry entry = _viewModel.Visible[index];
+            ((Label)cell).text = entry.Kind == LogEntryKind.Marker ? string.Empty : entry.Frame.ToString();
+        }
+
+        private void BindMessageCell(VisualElement cell, int index)
+        {
+            LogEntry entry = _viewModel.Visible[index];
+            var label = (Label)cell;
+            label.text = FirstLine(entry.Message);
+            label.EnableInClassList("cc-marker", entry.Kind == LogEntryKind.Marker);
+            label.EnableInClassList("cc-msg-warning", entry.Kind == LogEntryKind.Log && entry.Severity == LogSeverity.Warning);
+            label.EnableInClassList("cc-msg-error", entry.Kind == LogEntryKind.Log && entry.Severity >= LogSeverity.Error);
+        }
+
+        private void BindCountCell(VisualElement cell, int index)
+        {
+            int count = _viewModel.CountAt(index);
+            ((Label)cell).text = count > 1 ? "×" + count : string.Empty;
+        }
+
+        private void OnSelectionChanged(IEnumerable<object> selection)
+        {
+            LogEntry entry = null;
+            foreach (object item in selection)
+            {
+                entry = item as LogEntry;
+                break;
+            }
+
+            string text = entry == null
+                ? string.Empty
+                : entry.StackTrace.Length == 0 ? entry.Message : entry.Message + "\n\n" + entry.StackTrace;
+            _detail.SetValueWithoutNotify(text);
+        }
+
+        private void OnListScrolled(float value)
+        {
+            _stickToBottom = value >= _listScrollView.verticalScroller.highValue - RowHeight;
+        }
+
+        private void OnViewChanged(ViewChange change)
+        {
+            RequestRefresh();
+        }
+
+        private void RequestRefresh()
+        {
+            if (_list == null)
+            {
+                return;
+            }
+
+            if (_refresh == null)
+            {
+                _refresh = rootVisualElement.schedule.Execute(FlushRefresh);
+                _refresh.Pause();
+            }
+
+            _refresh.ExecuteLater(RefreshDelayMs);
+        }
+
+        private void FlushRefresh()
+        {
+            if (_list == null || _viewModel == null)
+            {
+                return;
+            }
+
+            _viewModel.Flush();
+            _list.Rebuild();
+            if (_stickToBottom && _viewModel.Visible.Count > 0)
+            {
+                _list.schedule.Execute(() => _list.ScrollToItem(-1));
+            }
+
+            UpdateStatus();
+        }
+
+        private void ScheduleSearch()
+        {
+            if (_searchDebounce == null)
+            {
+                _searchDebounce = rootVisualElement.schedule.Execute(() => _viewModel.Search = _searchField.value);
+                _searchDebounce.Pause();
+            }
+
+            _searchDebounce.ExecuteLater(SearchDelayMs);
+        }
+
+        private void UpdateCounts()
+        {
+            if (_viewModel == null || _logToggle == null)
+            {
+                return;
+            }
+
+            LogStore store = _viewModel.Store;
+            _logToggle.text = store.CountOf(LogSeverity.Log).ToString();
+            _warningToggle.text = store.CountOf(LogSeverity.Warning).ToString();
+            _errorToggle.text = (store.CountOf(LogSeverity.Error) + store.CountOf(LogSeverity.Exception) + store.CountOf(LogSeverity.Assert)).ToString();
+            UpdateStatus();
+        }
+
+        private void UpdateStatus()
+        {
+            if (_status == null || _viewModel == null)
+            {
+                return;
+            }
+
+            LogStore store = _viewModel.Store;
+            _status.text = $"{store.Count:N0} of {store.Capacity:N0} entries   ·   {_viewModel.Visible.Count:N0} shown   ·   session {store.CurrentSession}";
+        }
+
+        private void LoadIcons()
+        {
+            _logIcon = EditorGUIUtility.IconContent("console.infoicon.sml")?.image;
+            _warningIcon = EditorGUIUtility.IconContent("console.warnicon.sml")?.image;
+            _errorIcon = EditorGUIUtility.IconContent("console.erroricon.sml")?.image;
+        }
+
+        private Texture IconFor(LogSeverity severity)
+        {
+            switch (severity)
+            {
+                case LogSeverity.Warning:
+                    return _warningIcon;
+                case LogSeverity.Error:
+                case LogSeverity.Exception:
+                case LogSeverity.Assert:
+                    return _errorIcon;
+                default:
+                    return _logIcon;
+            }
+        }
+
+        private static string FirstLine(string message)
+        {
+            int newline = message.IndexOf('\n');
+            return newline < 0 ? message : message.Substring(0, newline).TrimEnd('\r');
+        }
+    }
+}

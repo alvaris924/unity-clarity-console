@@ -1,0 +1,85 @@
+/* Clarity Console window. Colors live in variables so a user stylesheet can retheme the window. */
+
+.cc-root {
+    flex-grow: 1;
+}
+
+.cc-dark {
+    --cc-warning: #f5a623;
+    --cc-error: #ff6b6b;
+    --cc-marker: #8fa3bf;
+    --cc-status: #9a9a9a;
+}
+
+.cc-light {
+    --cc-warning: #9a6400;
+    --cc-error: #b00020;
+    --cc-marker: #55607a;
+    --cc-status: #555555;
+}
+
+.cc-split {
+    flex-grow: 1;
+}
+
+.cc-list {
+    flex-grow: 1;
+    min-height: 60px;
+}
+
+.cc-search {
+    width: 220px;
+}
+
+.cc-toggle {
+    min-width: 52px;
+    -unity-text-align: middle-left;
+}
+
+.cc-toggle-icon {
+    width: 14px;
+    height: 14px;
+    margin-left: 4px;
+    margin-right: 2px;
+    align-self: center;
+}
+
+.cc-cell {
+    -unity-text-align: middle-left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cc-cell-icon {
+    width: 14px;
+    height: 14px;
+    align-self: center;
+}
+
+.cc-msg-warning {
+    color: var(--cc-warning);
+}
+
+.cc-msg-error {
+    color: var(--cc-error);
+}
+
+.cc-marker {
+    color: var(--cc-marker);
+    -unity-font-style: italic;
+}
+
+.cc-detail {
+    flex-grow: 1;
+    min-height: 60px;
+    margin: 0;
+}
+
+.cc-status {
+    padding: 2px 6px;
+    font-size: 11px;
+    color: var(--cc-status);
+    border-top-width: 1px;
+    border-top-color: rgba(0, 0, 0, 0.3);
+}
