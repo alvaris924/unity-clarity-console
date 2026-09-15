@@ -130,6 +130,87 @@ namespace ClarityConsole.Tests.Core
             Assert.That(store.CountOf(LogSeverity.Log), Is.EqualTo(2));
         }
 
+        [Test]
+        public void Channels_AreAssignedOnInsert_AndCounted()
+        {
+            var store = new LogStore(capacity: 8) { ChannelExtractor = new ChannelExtractor() };
+
+            store.Append(Message("[Net] one"));
+            store.Append(Message("[Net] two"));
+            store.Append(Message("[UI] three"));
+            store.Append(Message("untagged"));
+            store.Append(LogEntry.Marker("[Net] markers never get a channel", DateTime.UtcNow, 0));
+
+            Assert.That(store[0].Channel, Is.EqualTo("Net"));
+            Assert.That(store[3].Channel, Is.Empty);
+            Assert.That(store[4].Channel, Is.Empty, "markers are not channelled");
+            Assert.That(store.CountOfChannel("Net"), Is.EqualTo(2));
+            Assert.That(store.CountOfChannel("UI"), Is.EqualTo(1));
+            Assert.That(store.ChannelCounts.Select(c => c.Key), Is.EquivalentTo(new[] { "Net", "UI" }));
+        }
+
+        [Test]
+        public void ChannelCounts_FollowEvictionsAndClear()
+        {
+            var store = new LogStore(capacity: 2) { ChannelExtractor = new ChannelExtractor() };
+
+            store.Append(Message("[Net] one"));
+            store.Append(Message("[UI] two"));
+            store.Append(Message("[UI] three"));
+
+            Assert.That(store.CountOfChannel("Net"), Is.EqualTo(0), "the evicted entry gave up its count");
+            Assert.That(store.CountOfChannel("UI"), Is.EqualTo(2));
+
+            store.Clear();
+            Assert.That(store.ChannelCounts, Is.Empty);
+        }
+
+        [Test]
+        public void ReassignChannels_RewritesEveryEntry_AndRaisesTheEvent()
+        {
+            var store = new LogStore(capacity: 8) { ChannelExtractor = new ChannelExtractor() };
+            store.Append(Message("Net>> one"));
+            store.Append(Message("[Net] two"));
+            bool raised = false;
+            store.ChannelsReassigned += () => raised = true;
+
+            store.ReassignChannels(new ChannelExtractor(@"^(\w+)>>"));
+
+            Assert.That(raised, Is.True);
+            Assert.That(store[0].Channel, Is.EqualTo("Net"));
+            Assert.That(store[1].Channel, Is.Empty);
+            Assert.That(store.CountOfChannel("Net"), Is.EqualTo(1));
+        }
+
+        [Test]
+        public void WithoutAnExtractor_ChannelsStayEmpty()
+        {
+            var store = new LogStore(capacity: 8);
+
+            store.Append(Message("[Net] one"));
+
+            Assert.That(store[0].Channel, Is.Empty);
+            Assert.That(store.ChannelCounts, Is.Empty);
+        }
+
+        [Test]
+        public void Restore_AlsoAssignsChannels()
+        {
+            var store = new LogStore(capacity: 8) { ChannelExtractor = new ChannelExtractor() };
+            LogEntry entry = Message("[Journal] restored");
+            entry.AssignSequence(12, 1);
+
+            store.Restore(entry);
+
+            Assert.That(store[0].Channel, Is.EqualTo("Journal"));
+            Assert.That(store.CountOfChannel("Journal"), Is.EqualTo(1));
+        }
+
+        private static LogEntry Message(string message)
+        {
+            return new LogEntry(LogEntryKind.Log, LogSeverity.Log, message, string.Empty, DateTime.UtcNow, 0, 1, true, ObjectRef.None);
+        }
+
         private static LogEntry Entry(LogSeverity severity)
         {
             return new LogEntry(LogEntryKind.Log, severity, "message", string.Empty, DateTime.UtcNow, 0, 1, true, ObjectRef.None);

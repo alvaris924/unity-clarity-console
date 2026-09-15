@@ -120,6 +120,79 @@ namespace ClarityConsole.Tests.UI
             Assert.That(model.Visible, Is.Empty);
         }
 
+        [Test]
+        public void ChannelSelection_NarrowsToSelectedChannels_AndKeepsMarkers()
+        {
+            var store = new LogStore(capacity: 16) { ChannelExtractor = new ChannelExtractor() };
+            using var model = new ConsoleViewModel(store);
+            store.Append(Entry(LogSeverity.Log, "[Net] one"));
+            store.Append(Entry(LogSeverity.Log, "[UI] two"));
+            store.Append(Entry(LogSeverity.Log, "untagged"));
+            store.Append(LogEntry.Marker("Domain reloaded", DateTime.UtcNow, 0));
+
+            model.SetChannelSelected("Net", true);
+
+            Assert.That(model.Visible.Select(e => e.Message), Is.EqualTo(new[] { "[Net] one", "Domain reloaded" }));
+            Assert.That(model.IsChannelSelected("Net"), Is.True);
+
+            model.SetChannelSelected("UI", true);
+            Assert.That(model.Visible.Select(e => e.Message), Is.EqualTo(new[] { "[Net] one", "[UI] two", "Domain reloaded" }));
+
+            model.ClearChannelSelection();
+            Assert.That(model.Visible.Count, Is.EqualTo(4));
+            Assert.That(model.SelectedChannels, Is.Empty);
+        }
+
+        [Test]
+        public void ChannelSelection_CombinesWithSearchAndSeverity()
+        {
+            var store = new LogStore(capacity: 16) { ChannelExtractor = new ChannelExtractor() };
+            using var model = new ConsoleViewModel(store);
+            store.Append(Entry(LogSeverity.Log, "[Net] timeout after 8000ms"));
+            store.Append(Entry(LogSeverity.Warning, "[Net] timeout after 9000ms"));
+            store.Append(Entry(LogSeverity.Log, "[Net] connected"));
+            store.Append(Entry(LogSeverity.Log, "[UI] timeout ignored"));
+
+            model.SetChannelSelected("Net", true);
+            model.Search = "timeout";
+            model.SetSeverityVisible(LogSeverity.Warning, false);
+
+            Assert.That(model.Visible.Select(e => e.Message), Is.EqualTo(new[] { "[Net] timeout after 8000ms" }));
+        }
+
+        [Test]
+        public void SetChannelSelected_IgnoresEmptyNames_AndRepeats()
+        {
+            var store = new LogStore(capacity: 16) { ChannelExtractor = new ChannelExtractor() };
+            using var model = new ConsoleViewModel(store);
+            store.Append(Entry(LogSeverity.Log, "[Net] one"));
+            int rebuilds = 0;
+            model.Changed += change => { if (change == ViewChange.Rebuilt) rebuilds++; };
+
+            model.SetChannelSelected(null, true);
+            model.SetChannelSelected(string.Empty, true);
+            model.SetChannelSelected("Net", true);
+            model.SetChannelSelected("Net", true);
+
+            Assert.That(rebuilds, Is.EqualTo(1));
+            Assert.That(model.SelectedChannels, Is.EqualTo(new[] { "Net" }));
+        }
+
+        [Test]
+        public void ReassignChannels_DropsSelectionsThatNoLongerExist_AndRebuilds()
+        {
+            var store = new LogStore(capacity: 16) { ChannelExtractor = new ChannelExtractor() };
+            using var model = new ConsoleViewModel(store);
+            store.Append(Entry(LogSeverity.Log, "[Net] one"));
+            store.Append(Entry(LogSeverity.Log, "UI>> two"));
+            model.SetChannelSelected("Net", true);
+
+            store.ReassignChannels(new ChannelExtractor(@"^(\w+)>>"));
+
+            Assert.That(model.SelectedChannels, Is.Empty);
+            Assert.That(model.Visible.Count, Is.EqualTo(2));
+        }
+
         private static LogEntry Entry(LogSeverity severity, string message)
         {
             return new LogEntry(LogEntryKind.Log, severity, message, string.Empty, DateTime.UtcNow, 0, 1, true, ObjectRef.None);

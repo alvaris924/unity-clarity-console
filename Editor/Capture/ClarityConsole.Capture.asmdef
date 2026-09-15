@@ -2,7 +2,8 @@
   "name": "ClarityConsole.Capture",
   "rootNamespace": "ClarityConsole.Capture",
   "references": [
-    "ClarityConsole.Core"
+    "ClarityConsole.Core",
+    "ClarityConsole.Settings"
   ],
   "includePlatforms": [
     "Editor"

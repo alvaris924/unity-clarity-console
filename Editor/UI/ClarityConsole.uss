@@ -26,6 +26,38 @@
     flex-grow: 1;
 }
 
+.cc-channels {
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 2px 4px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(0, 0, 0, 0.3);
+}
+
+.cc-chip {
+    margin: 1px 2px;
+    padding: 0 7px;
+    height: 17px;
+    font-size: 10px;
+    border-radius: 9px;
+    border-width: 1px;
+    background-color: rgba(127, 127, 127, 0.08);
+    -unity-text-align: middle-center;
+}
+
+.cc-chip:hover {
+    background-color: rgba(127, 127, 127, 0.22);
+}
+
+.cc-chip-selected {
+    -unity-font-style: bold;
+}
+
+.cc-chip-overflow {
+    color: var(--cc-status);
+    border-color: rgba(127, 127, 127, 0.35);
+}
+
 .cc-list {
     flex-grow: 1;
     min-height: 60px;
