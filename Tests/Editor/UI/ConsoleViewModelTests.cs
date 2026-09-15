@@ -265,6 +265,67 @@ namespace ClarityConsole.Tests.UI
             Assert.That(model.IgnoredCount, Is.EqualTo(0));
         }
 
+        [Test]
+        public void WatchEntries_ShareOneRow_ThatKeepsItsPlaceAndShowsTheLatest()
+        {
+            var store = Store();
+            using var model = new ConsoleViewModel(store);
+            store.Append(Entry(LogSeverity.Log, "[watch:PlayerHP] 100"));
+            store.Append(Entry(LogSeverity.Log, "before"));
+            store.Append(Entry(LogSeverity.Log, "[watch:PlayerHP] 80"));
+            store.Append(Entry(LogSeverity.Log, "[watch:Ammo] 30"));
+            store.Append(Entry(LogSeverity.Log, "[watch:PlayerHP] 55"));
+
+            Assert.That(model.Visible.Select(e => e.Message), Is.EqualTo(new[]
+            {
+                "[watch:PlayerHP] 55",
+                "before",
+                "[watch:Ammo] 30",
+            }));
+            Assert.That(model.CountAt(0), Is.EqualTo(3), "the row counts its updates");
+            Assert.That(model.CountAt(2), Is.EqualTo(1));
+        }
+
+        [Test]
+        public void WatchRows_RespectFiltersAndSurviveRebuilds()
+        {
+            var store = Store();
+            using var model = new ConsoleViewModel(store);
+            store.Append(Entry(LogSeverity.Log, "[watch:PlayerHP] 100"));
+            store.Append(Entry(LogSeverity.Log, "[watch:PlayerHP] 42"));
+
+            model.Search = "42";
+            Assert.That(model.Visible.Single().Message, Is.EqualTo("[watch:PlayerHP] 42"));
+
+            model.Search = "100";
+            Assert.That(model.Visible.Single().Message, Is.EqualTo("[watch:PlayerHP] 100"), "older values are still in the store");
+
+            model.Search = string.Empty;
+            Assert.That(model.Visible.Count, Is.EqualTo(1));
+            Assert.That(model.CountAt(0), Is.EqualTo(2));
+        }
+
+        [Test]
+        public void WithoutAWatchExtractor_EveryEntryGetsItsOwnRow()
+        {
+            var store = new LogStore(capacity: 16);
+            using var model = new ConsoleViewModel(store);
+
+            store.Append(Entry(LogSeverity.Log, "[watch:PlayerHP] 100"));
+            store.Append(Entry(LogSeverity.Log, "[watch:PlayerHP] 80"));
+
+            Assert.That(model.Visible.Count, Is.EqualTo(2));
+        }
+
+        private static LogStore Store()
+        {
+            return new LogStore(capacity: 16)
+            {
+                ChannelExtractor = new ChannelExtractor(),
+                WatchExtractor = new WatchExtractor(),
+            };
+        }
+
         private static LogEntry Entry(LogSeverity severity, string message)
         {
             return new LogEntry(LogEntryKind.Log, severity, message, string.Empty, DateTime.UtcNow, 0, 1, true, ObjectRef.None);

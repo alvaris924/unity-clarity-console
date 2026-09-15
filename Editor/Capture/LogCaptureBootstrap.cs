@@ -26,7 +26,11 @@ namespace ClarityConsole.Capture
             bool freshEditorSession = !SessionState.GetBool(EditorSessionKey, false);
             SessionState.SetBool(EditorSessionKey, true);
 
-            Store = new LogStore { ChannelExtractor = new ChannelExtractor(ClarityConsoleSettings.instance.ChannelPattern) };
+            Store = new LogStore
+            {
+                ChannelExtractor = new ChannelExtractor(ClarityConsoleSettings.instance.ChannelPattern),
+                WatchExtractor = ClarityConsoleSettings.instance.CreateWatchExtractor(),
+            };
             Journal = new LogJournal(JournalDirectory);
             RestoreJournal(freshEditorSession);
 
@@ -80,6 +84,7 @@ namespace ClarityConsole.Capture
 
         private static void OnSettingsChanged()
         {
+            Store.WatchExtractor = ClarityConsoleSettings.instance.CreateWatchExtractor();
             Store.ReassignChannels(new ChannelExtractor(ClarityConsoleSettings.instance.ChannelPattern));
         }
 

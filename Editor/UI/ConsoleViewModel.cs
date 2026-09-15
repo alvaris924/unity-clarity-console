@@ -25,6 +25,7 @@ namespace ClarityConsole.UI
         private readonly List<LogEntry> _visible = new List<LogEntry>();
         private readonly List<int> _counts = new List<int>();
         private readonly Dictionary<CollapseKey, int> _groups = new Dictionary<CollapseKey, int>();
+        private readonly Dictionary<string, int> _watchRows = new Dictionary<string, int>(StringComparer.Ordinal);
         private readonly HashSet<string> _selectedChannels = new HashSet<string>(StringComparer.Ordinal);
         private readonly bool[] _severityVisible = new bool[SeverityCount];
         private LogQuery _query = LogQuery.Empty;
@@ -174,6 +175,7 @@ namespace ClarityConsole.UI
             _visible.Clear();
             _counts.Clear();
             _groups.Clear();
+            _watchRows.Clear();
             _pendingEvictions = 0;
             _ignored = 0;
 
@@ -229,6 +231,23 @@ namespace ClarityConsole.UI
             if (!Matches(entry))
             {
                 return false;
+            }
+
+            if (entry.WatchKey.Length > 0)
+            {
+                // A watch row keeps its place and shows the newest value, so a value logged every frame
+                // reads as one line that changes rather than a wall of near-identical rows.
+                if (_watchRows.TryGetValue(entry.WatchKey, out int watchIndex))
+                {
+                    _visible[watchIndex] = entry;
+                    _counts[watchIndex]++;
+                    return true;
+                }
+
+                _watchRows[entry.WatchKey] = _visible.Count;
+                _visible.Add(entry);
+                _counts.Add(1);
+                return true;
             }
 
             if (_collapse && entry.Kind == LogEntryKind.Log)
