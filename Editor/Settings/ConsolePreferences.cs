@@ -1,0 +1,73 @@
+using System;
+using UnityEditor;
+
+namespace ClarityConsole.Settings
+{
+    /// <summary>
+    /// Per-user console preferences, kept in <see cref="EditorPrefs"/> rather than the project settings
+    /// file: whether the console clears itself and whether it pauses on an error is a personal habit, not
+    /// something a team should share through version control.
+    /// </summary>
+    internal static class ConsolePreferences
+    {
+        private const string Prefix = "ClarityConsole.";
+
+        /// <summary>Raised after any preference changes, on the main thread.</summary>
+        public static event Action Changed;
+
+        /// <summary>Pause Play mode as soon as an error, exception or assertion is captured.</summary>
+        public static bool ErrorPause
+        {
+            get => Get(nameof(ErrorPause), false);
+            set => Set(nameof(ErrorPause), value);
+        }
+
+        /// <summary>Clear when entering Play mode.</summary>
+        public static bool ClearOnPlay
+        {
+            get => Get(nameof(ClearOnPlay), false);
+            set => Set(nameof(ClearOnPlay), value);
+        }
+
+        /// <summary>Clear when a recompile starts.</summary>
+        public static bool ClearOnRecompile
+        {
+            get => Get(nameof(ClearOnRecompile), false);
+            set => Set(nameof(ClearOnRecompile), value);
+        }
+
+        /// <summary>Clear when a player build starts.</summary>
+        public static bool ClearOnBuild
+        {
+            get => Get(nameof(ClearOnBuild), false);
+            set => Set(nameof(ClearOnBuild), value);
+        }
+
+        /// <summary>Restores every preference to its default. Used by tests and the settings page.</summary>
+        public static void ResetToDefaults()
+        {
+            EditorPrefs.DeleteKey(Prefix + nameof(ErrorPause));
+            EditorPrefs.DeleteKey(Prefix + nameof(ClearOnPlay));
+            EditorPrefs.DeleteKey(Prefix + nameof(ClearOnRecompile));
+            EditorPrefs.DeleteKey(Prefix + nameof(ClearOnBuild));
+            Changed?.Invoke();
+        }
+
+        private static bool Get(string name, bool fallback)
+        {
+            return EditorPrefs.GetBool(Prefix + name, fallback);
+        }
+
+        private static void Set(string name, bool value)
+        {
+            string key = Prefix + name;
+            if (EditorPrefs.GetBool(key, false) == value && EditorPrefs.HasKey(key))
+            {
+                return;
+            }
+
+            EditorPrefs.SetBool(key, value);
+            Changed?.Invoke();
+        }
+    }
+}

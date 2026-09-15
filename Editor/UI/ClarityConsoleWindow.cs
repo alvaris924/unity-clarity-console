@@ -32,6 +32,7 @@ namespace ClarityConsole.UI
         private ToolbarToggle _logToggle;
         private ToolbarToggle _warningToggle;
         private ToolbarToggle _errorToggle;
+        private ToolbarToggle _errorPauseToggle;
         private ToolbarSearchField _searchField;
         private ChannelBar _channels;
         private DetailView _detail;
@@ -78,6 +79,7 @@ namespace ClarityConsole.UI
             }
 
             ClarityConsoleSettings.Changed -= OnSettingsChanged;
+            ConsolePreferences.Changed -= OnPreferencesChanged;
             _viewModel.Changed -= OnViewChanged;
             _viewModel.Dispose();
             _viewModel = null;
@@ -112,6 +114,7 @@ namespace ClarityConsole.UI
             _detail.FrameFilter = ClarityConsoleSettings.instance.CreateFrameFilter();
             _viewModel.IgnoreList = ClarityConsoleSettings.instance.CreateIgnoreList();
             ClarityConsoleSettings.Changed += OnSettingsChanged;
+            ConsolePreferences.Changed += OnPreferencesChanged;
             split.Add(_detail);
             root.Add(split);
 
@@ -138,6 +141,19 @@ namespace ClarityConsole.UI
             toolbar.AddToClassList("cc-toolbar");
 
             toolbar.Add(new ToolbarButton(() => _viewModel.Store.Clear()) { text = "Clear" });
+
+            var clearOptions = new ToolbarMenu { text = string.Empty };
+            clearOptions.AddToClassList("cc-clear-options");
+            clearOptions.tooltip = "When the console should empty itself.";
+            AppendPreferenceToggle(clearOptions, "Clear on Play", () => ConsolePreferences.ClearOnPlay, v => ConsolePreferences.ClearOnPlay = v);
+            AppendPreferenceToggle(clearOptions, "Clear on Recompile", () => ConsolePreferences.ClearOnRecompile, v => ConsolePreferences.ClearOnRecompile = v);
+            AppendPreferenceToggle(clearOptions, "Clear on Build", () => ConsolePreferences.ClearOnBuild, v => ConsolePreferences.ClearOnBuild = v);
+            toolbar.Add(clearOptions);
+
+            _errorPauseToggle = new ToolbarToggle { text = "Error Pause", value = ConsolePreferences.ErrorPause };
+            _errorPauseToggle.tooltip = "Pause Play mode as soon as an error, exception or assertion is logged.";
+            _errorPauseToggle.RegisterValueChangedCallback(evt => ConsolePreferences.ErrorPause = evt.newValue);
+            toolbar.Add(_errorPauseToggle);
 
             _collapseToggle = new ToolbarToggle { text = "Collapse" };
             _collapseToggle.RegisterValueChangedCallback(evt => _viewModel.Collapse = evt.newValue);
@@ -176,6 +192,15 @@ namespace ClarityConsole.UI
             toolbar.Add(_errorToggle);
 
             return toolbar;
+        }
+
+        /// <summary>A menu item that reads and writes a preference, showing a tick when it is on.</summary>
+        private static void AppendPreferenceToggle(ToolbarMenu menu, string label, Func<bool> get, Action<bool> set)
+        {
+            menu.menu.AppendAction(
+                label,
+                _ => set(!get()),
+                _ => get() ? DropdownMenuAction.Status.Checked : DropdownMenuAction.Status.Normal);
         }
 
         private static ToolbarToggle BuildSeverityToggle(Texture icon, string className, Action<bool> onChanged)
@@ -476,6 +501,11 @@ namespace ClarityConsole.UI
         private void OnListScrolled(float value)
         {
             _stickToBottom = value >= _listScrollView.verticalScroller.highValue - RowHeight;
+        }
+
+        private void OnPreferencesChanged()
+        {
+            _errorPauseToggle?.SetValueWithoutNotify(ConsolePreferences.ErrorPause);
         }
 
         private void OnSettingsChanged()
