@@ -9,6 +9,8 @@
     --cc-error: #ff6b6b;
     --cc-marker: #8fa3bf;
     --cc-status: #9a9a9a;
+    --cc-link: #4fc1ff;
+    --cc-link-hover: #9fdcff;
 }
 
 .cc-light {
@@ -16,6 +18,8 @@
     --cc-error: #b00020;
     --cc-marker: #55607a;
     --cc-status: #555555;
+    --cc-link: #0b5ed7;
+    --cc-link-hover: #0842a0;
 }
 
 .cc-split {
@@ -74,6 +78,34 @@
     flex-grow: 1;
     min-height: 60px;
     margin: 0;
+}
+
+.cc-detail-message {
+    flex-shrink: 0;
+    margin: 0;
+}
+
+.cc-frames {
+    padding: 3px 6px;
+}
+
+.cc-frame {
+    font-size: 11px;
+    padding: 1px 2px;
+    white-space: nowrap;
+}
+
+.cc-frame-link {
+    color: var(--cc-link);
+}
+
+.cc-frame-link:hover {
+    color: var(--cc-link-hover);
+    background-color: rgba(127, 127, 127, 0.15);
+}
+
+.cc-frame-entry {
+    -unity-font-style: bold;
 }
 
 .cc-status {

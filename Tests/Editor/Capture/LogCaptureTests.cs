@@ -151,6 +151,22 @@ namespace ClarityConsole.Tests.Capture
             Assert.That(_capture.Pending, Is.EqualTo(0));
         }
 
+        [Test]
+        public void Log_StackTrace_ParsesToAFrameInThisTestFile()
+        {
+            Debug.Log($"{Tag} trace check");
+            _capture.DrainAll();
+
+            ParsedTrace trace = LastLog().Trace;
+            TraceFrame frame = trace.EntryFrame;
+
+            Assert.That(trace.Frames.Count, Is.GreaterThan(1), "expected at least the Debug.Log frame and this method");
+            Assert.That(frame, Is.Not.Null, "no frame with a source location was found");
+            Assert.That(frame.FilePath, Does.EndWith("LogCaptureTests.cs"), frame.Raw);
+            Assert.That(frame.Line, Is.GreaterThan(0));
+            Assert.That(frame.MethodName, Is.EqualTo(nameof(Log_StackTrace_ParsesToAFrameInThisTestFile)));
+        }
+
         private LogEntry LastLog()
         {
             return _store.Entries.Last(e => e.Kind == LogEntryKind.Log);

@@ -8,6 +8,8 @@ namespace ClarityConsole.Core
     /// </summary>
     internal sealed class LogEntry
     {
+        private ParsedTrace _trace;
+
         public LogEntry(
             LogEntryKind kind,
             LogSeverity severity,
@@ -55,6 +57,9 @@ namespace ClarityConsole.Core
 
         /// <summary>Play session the entry belongs to; 0 before the first Play in this Editor run.</summary>
         public int Session { get; private set; }
+
+        /// <summary>The stack trace split into frames. Parsed on first access and cached; never on the capture path.</summary>
+        public ParsedTrace Trace => _trace ?? (_trace = StackTraceParser.Parse(StackTrace));
 
         public static LogEntry Marker(string message, DateTime timestampUtc, int frame)
         {
