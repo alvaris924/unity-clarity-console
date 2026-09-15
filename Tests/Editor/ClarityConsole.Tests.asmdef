@@ -1,0 +1,28 @@
+{
+  "name": "ClarityConsole.Tests",
+  "rootNamespace": "ClarityConsole.Tests",
+  "references": [
+    "UnityEngine.TestRunner",
+    "UnityEditor.TestRunner",
+    "ClarityConsole.Core",
+    "ClarityConsole.Capture",
+    "ClarityConsole.Settings",
+    "ClarityConsole.Extensions",
+    "ClarityConsole.UI"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": true,
+  "precompiledReferences": [
+    "nunit.framework.dll"
+  ],
+  "autoReferenced": false,
+  "defineConstraints": [
+    "UNITY_INCLUDE_TESTS"
+  ],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

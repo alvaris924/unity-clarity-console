@@ -40,6 +40,8 @@ jobs:
             ci
             release
             deps
+          ignoreLabels: |
+            dependencies
           requireScope: false
           subjectPattern: ^(?![A-Z]).+$
           subjectPatternError: |

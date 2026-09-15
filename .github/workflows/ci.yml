@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  checks: write
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  license:
+    name: License available
+    runs-on: ubuntu-latest
+    outputs:
+      available: ${{ steps.check.outputs.available }}
+    steps:
+      - id: check
+        env:
+          HAS_LICENSE: ${{ secrets.UNITY_LICENSE != '' }}
+        run: |
+          echo "available=$HAS_LICENSE" >> "$GITHUB_OUTPUT"
+          if [ "$HAS_LICENSE" != "true" ]; then
+            echo "::notice::UNITY_LICENSE is not available to this run, so the EditMode jobs are skipped. Fork pull requests never receive secrets."
+          fi
+
+  editmode:
+    name: EditMode tests
+    needs: license
+    if: needs.license.outputs.available == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Local development happens on 6000.2.9f1. Add 2022.3 LTS (the package floor),
+        # 6000.0 LTS and 6000.6 here once the matching unityci/editor images are confirmed.
+        unityVersion:
+          - 6000.2.9f1
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/cache@v4
+        with:
+          path: DevProject~/Library
+          key: Library-${{ matrix.unityVersion }}-${{ hashFiles('DevProject~/Packages/manifest.json', 'package.json') }}
+          restore-keys: |
+            Library-${{ matrix.unityVersion }}-
+
+      - uses: game-ci/unity-test-runner@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: DevProject~
+          unityVersion: ${{ matrix.unityVersion }}
+          testMode: EditMode
+          checkName: EditMode ${{ matrix.unityVersion }} results
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: editmode-results-${{ matrix.unityVersion }}
+          path: artifacts
