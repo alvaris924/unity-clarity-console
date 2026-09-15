@@ -4,14 +4,16 @@ using System.IO;
 using ClarityConsole.Core;
 using ClarityConsole.Settings;
 using UnityEditor;
+using UnityEditor.Compilation;
 using UnityEngine;
 
 namespace ClarityConsole.Capture
 {
     /// <summary>
     /// Editor entry point. Restores the journal into a fresh store, starts the single capture for this
-    /// domain, journals every new entry, and shuts both down before an assembly reload or Editor quit so
-    /// the previous log handler is restored and the journal is flushed.
+    /// domain, journals every new entry, applies the clear and pause preferences, and shuts everything
+    /// down before an assembly reload or Editor quit so the previous log handler is restored and the
+    /// journal is flushed.
     /// </summary>
     [InitializeOnLoad]
     internal static class LogCaptureBootstrap
@@ -37,11 +39,17 @@ namespace ClarityConsole.Capture
             Store.EntryAppended += Journal.Append;
             Store.Cleared += Journal.Reset;
 
+            ClearPolicy = new ClearPolicy(Store, ShouldClear, () => ConsolePreferences.ErrorPause);
+            ClearPolicy.PauseRequested += PausePlayMode;
+            Store.EntryAppended += OnEntryAppended;
+
             Capture = new LogCapture(Store, sessionStateKey: PlaySessionKey);
             Capture.Drained += Journal.Flush;
             Capture.Start(freshEditorSession ? "Editor started" : "Domain reloaded");
 
             ClarityConsoleSettings.Changed += OnSettingsChanged;
+            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+            CompilationPipeline.compilationStarted += OnCompilationStarted;
             AssemblyReloadEvents.beforeAssemblyReload += Shutdown;
             EditorApplication.quitting += Shutdown;
         }
@@ -52,12 +60,30 @@ namespace ClarityConsole.Capture
 
         public static LogCapture Capture { get; }
 
+        /// <summary>Decides when the console empties itself and when an error pauses Play mode.</summary>
+        public static ClearPolicy ClearPolicy { get; }
+
         /// <summary>Number of entries read back from the journal when this domain loaded.</summary>
         public static int RestoredCount { get; private set; }
 
         private static string JournalDirectory
         {
             get { return Path.Combine(Path.GetDirectoryName(Application.dataPath) ?? ".", "Library", "ClarityConsole"); }
+        }
+
+        private static bool ShouldClear(ClearTrigger trigger)
+        {
+            switch (trigger)
+            {
+                case ClearTrigger.EnteringPlayMode:
+                    return ConsolePreferences.ClearOnPlay;
+                case ClearTrigger.CompilationStarted:
+                    return ConsolePreferences.ClearOnRecompile;
+                case ClearTrigger.BuildStarted:
+                    return ConsolePreferences.ClearOnBuild;
+                default:
+                    return false;
+            }
         }
 
         private static void RestoreJournal(bool freshEditorSession)
@@ -82,6 +108,32 @@ namespace ClarityConsole.Capture
             RestoredCount = restored.Count;
         }
 
+        private static void OnEntryAppended(LogEntry entry)
+        {
+            ClearPolicy.Inspect(entry, EditorApplication.isPlaying);
+        }
+
+        private static void PausePlayMode()
+        {
+            EditorApplication.isPaused = true;
+        }
+
+        private static void OnPlayModeStateChanged(PlayModeStateChange change)
+        {
+            // Clearing while leaving Edit mode keeps the "Entered Play mode" marker, which is appended
+            // afterwards, as the first thing in the run.
+            if (change == PlayModeStateChange.ExitingEditMode)
+            {
+                ClearPolicy.Handle(ClearTrigger.EnteringPlayMode);
+            }
+        }
+
+        private static void OnCompilationStarted(object context)
+        {
+            // Clearing now also resets the journal, so nothing is restored after the reload.
+            ClearPolicy.Handle(ClearTrigger.CompilationStarted);
+        }
+
         private static void OnSettingsChanged()
         {
             Store.WatchExtractor = ClarityConsoleSettings.instance.CreateWatchExtractor();
@@ -91,6 +143,9 @@ namespace ClarityConsole.Capture
         private static void Shutdown()
         {
             ClarityConsoleSettings.Changed -= OnSettingsChanged;
+            EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+            CompilationPipeline.compilationStarted -= OnCompilationStarted;
+            Store.EntryAppended -= OnEntryAppended;
             Capture.Stop();
             Journal.Flush();
             Journal.Dispose();
