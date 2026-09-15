@@ -52,10 +52,26 @@ namespace ClarityConsole.Settings
             root.Add(status);
             UpdateStatus(status, field.value);
 
+            var frames = new Label("Stack frames");
+            frames.style.unityFontStyleAndWeight = UnityEngine.FontStyle.Bold;
+            frames.style.marginTop = 12;
+            frames.style.marginBottom = 4;
+            root.Add(frames);
+
+            var radius = new SliderInt("Preview lines", ClarityConsoleSettings.MinSourcePreviewRadius, ClarityConsoleSettings.MaxSourcePreviewRadius)
+            {
+                value = ClarityConsoleSettings.instance.SourcePreviewRadius,
+                showInputField = true,
+            };
+            radius.tooltip = "Lines of source shown on each side of the line a stack frame points at. Zero shows only that line.";
+            radius.RegisterValueChangedCallback(evt => ClarityConsoleSettings.instance.SourcePreviewRadius = evt.newValue);
+            root.Add(radius);
+
             var reset = new Button(() =>
             {
                 ClarityConsoleSettings.instance.ResetToDefaults();
                 field.SetValueWithoutNotify(ClarityConsoleSettings.instance.ChannelPattern);
+                radius.SetValueWithoutNotify(ClarityConsoleSettings.instance.SourcePreviewRadius);
                 UpdateStatus(status, field.value);
             })
             {

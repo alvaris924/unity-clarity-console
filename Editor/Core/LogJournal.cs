@@ -158,16 +158,26 @@ namespace ClarityConsole.Core
             }
         }
 
-        /// <summary>Deletes every segment. The next append starts a fresh journal.</summary>
+        /// <summary>
+        /// Drops every retained entry. Segments are deleted; one that cannot be deleted because something
+        /// else holds it open is emptied instead, so a reset never leaves old records behind. The next
+        /// append starts a new segment either way.
+        /// </summary>
         public void Reset()
         {
             CloseWriter();
+            int highest = 0;
+
             foreach (KeyValuePair<int, string> segment in ListSegments())
             {
-                TryDelete(segment.Value);
+                highest = Math.Max(highest, segment.Key);
+                if (!TryDelete(segment.Value))
+                {
+                    TryEmpty(segment.Value);
+                }
             }
 
-            _currentIndex = 0;
+            _currentIndex = highest;
             _currentLength = 0;
             _olderSegmentBytes = 0;
         }
@@ -198,7 +208,8 @@ namespace ClarityConsole.Core
 
             System.IO.Directory.CreateDirectory(_directory);
             string path = SegmentPath(_currentIndex);
-            bool fresh = !File.Exists(path) || new FileInfo(path).Length < HeaderBytes;
+            var info = new FileInfo(path);
+            bool fresh = !info.Exists || info.Length < HeaderBytes;
             _stream = new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.ReadWrite, 64 * 1024);
             _writer = new BinaryWriter(_stream, Encoding.UTF8, leaveOpen: true);
             if (fresh)
@@ -207,6 +218,12 @@ namespace ClarityConsole.Core
                 _writer.Write(FormatVersion);
                 _currentLength = HeaderBytes;
                 _dirty = true;
+            }
+            else if (_currentLength == 0)
+            {
+                // Appending to a segment this instance did not open: adopt its real size so the reported
+                // size and the rotation threshold both match what is on disk.
+                _currentLength = info.Length;
             }
         }
 
@@ -336,11 +353,32 @@ namespace ClarityConsole.Core
             _stream = null;
         }
 
-        private static void TryDelete(string path)
+        private static bool TryDelete(string path)
         {
             try
             {
                 File.Delete(path);
+                return !File.Exists(path);
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>Truncates a segment that cannot be deleted, so its records stop being read back.</summary>
+        private static void TryEmpty(string path)
+        {
+            try
+            {
+                using (var stream = new FileStream(path, FileMode.Open, FileAccess.Write, FileShare.ReadWrite))
+                {
+                    stream.SetLength(0);
+                }
             }
             catch (IOException)
             {

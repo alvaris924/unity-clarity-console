@@ -149,6 +149,42 @@
     -unity-font-style: bold;
 }
 
+.cc-frame-selected {
+    background-color: rgba(127, 127, 127, 0.18);
+}
+
+.cc-src {
+    margin: 4px 6px 6px 6px;
+    border-width: 1px;
+    border-color: rgba(127, 127, 127, 0.35);
+    border-radius: 4px;
+    padding-bottom: 2px;
+}
+
+.cc-src-header {
+    font-size: 10px;
+    color: var(--cc-status);
+    padding: 2px 6px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(127, 127, 127, 0.25);
+}
+
+.cc-src-lines {
+    padding: 2px 0;
+}
+
+.cc-src-line {
+    font-size: 11px;
+    padding: 0 6px;
+    white-space: nowrap;
+    -unity-font-style: normal;
+}
+
+.cc-src-hit {
+    background-color: rgba(43, 127, 212, 0.28);
+    -unity-font-style: bold;
+}
+
 .cc-status {
     padding: 2px 6px;
     font-size: 11px;
