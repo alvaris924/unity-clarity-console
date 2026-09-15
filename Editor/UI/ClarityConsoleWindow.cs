@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using ClarityConsole.Capture;
 using ClarityConsole.Core;
 using ClarityConsole.Settings;
@@ -142,6 +143,15 @@ namespace ClarityConsole.UI
             _collapseToggle.RegisterValueChangedCallback(evt => _viewModel.Collapse = evt.newValue);
             toolbar.Add(_collapseToggle);
 
+            var export = new ToolbarMenu { text = "Export" };
+            export.tooltip = "Write the rows currently shown, filters and all, to a file.";
+            export.menu.AppendAction("Save as text…", _ => SaveVisible(ExportFormat.Text));
+            export.menu.AppendAction("Save as Markdown…", _ => SaveVisible(ExportFormat.Markdown));
+            export.menu.AppendAction("Save as JSON…", _ => SaveVisible(ExportFormat.Json));
+            export.menu.AppendSeparator();
+            export.menu.AppendAction("Copy all shown", _ => CopyVisible());
+            toolbar.Add(export);
+
             toolbar.Add(new ToolbarSpacer { flex = true });
 
             _searchField = new ToolbarSearchField();
@@ -281,6 +291,8 @@ namespace ClarityConsole.UI
                 return;
             }
 
+            evt.menu.AppendAction("Copy for a bug report", _ => CopyForBugReport(entry));
+
             evt.menu.AppendSeparator();
             evt.menu.AppendAction("Ignore this message", _ => AddIgnoreRule(IgnoreMatch.Message, entry.Message));
             if (entry.Channel.Length > 0)
@@ -290,6 +302,57 @@ namespace ClarityConsole.UI
 
             evt.menu.AppendSeparator();
             evt.menu.AppendAction("Manage ignore rules…", _ => SettingsService.OpenProjectSettings("Project/Clarity Console"));
+        }
+
+        /// <summary>Writes the rows currently shown to a file the user picks.</summary>
+        private void SaveVisible(ExportFormat format)
+        {
+            string extension = LogExporter.ExtensionFor(format);
+            string suggested = "console-" + DateTime.Now.ToString("yyyyMMdd-HHmmss") + "." + extension;
+            string path = EditorUtility.SaveFilePanel("Export console", string.Empty, suggested, extension);
+            if (string.IsNullOrEmpty(path))
+            {
+                return;
+            }
+
+            try
+            {
+                File.WriteAllText(path, Export(format));
+                ShowNotice("Exported " + _viewModel.Visible.Count + " rows to " + Path.GetFileName(path));
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                ShowNotice("Could not write " + Path.GetFileName(path) + ": " + ex.Message);
+            }
+        }
+
+        private void CopyVisible()
+        {
+            EditorGUIUtility.systemCopyBuffer = Export(ExportFormat.Text);
+            ShowNotice("Copied " + _viewModel.Visible.Count + " rows to the clipboard.");
+        }
+
+        private void CopyForBugReport(LogEntry entry)
+        {
+            var options = new ExportOptions
+            {
+                Format = ExportFormat.Text,
+                IncludeStackTraces = true,
+                Header = ExportContext.Describe(_viewModel),
+            };
+
+            EditorGUIUtility.systemCopyBuffer = LogExporter.Export(new[] { entry }, options);
+            ShowNotice("Copied the entry with its stack and this Editor's details.");
+        }
+
+        private string Export(ExportFormat format)
+        {
+            return LogExporter.Export(_viewModel.Visible, new ExportOptions
+            {
+                Format = format,
+                IncludeStackTraces = true,
+                Header = ExportContext.Describe(_viewModel),
+            });
         }
 
         private void AddIgnoreRule(IgnoreMatch match, string pattern)
