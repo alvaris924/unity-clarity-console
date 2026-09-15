@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ### Added
 
+- Ignore rules: right-click a row to silence that message or its whole channel, and the status bar says how many entries are hidden. Rules live in Project Settings where they can be turned off or removed; entries are only hidden from the window, so capture and the journal keep them and removing a rule brings them back.
+- A row context menu with copy actions: the message on its own, or the message with its stack trace.
 - Frame folding: runs of infrastructure frames in the detail pane collapse into one row that names what it hid, for example "3 frames hidden (UnityEngine, Cysharp)", and unfold on click. The engine, the Editor, the runtime and this package fold by default; projects add their own wrappers as type-name prefixes in Project Settings. Opening an entry now lands on the first frame that is not folded, so a project's logging wrapper is skipped as well.
 - Source preview: selecting a stack frame shows the lines around it with the frame's own line highlighted, read straight from disk and re-read when the file changes. Clicking a frame now selects and previews it; double-clicking it, or the preview, opens the file in the code editor. The number of lines is configurable in Project Settings.
 - Query language in the search field: terms are joined by AND, `"quoted phrases"` match exactly, `-term` excludes, `/regex/i` matches a pattern, `sev:error,warn` and `tag:PlayFab*` filter, `in:stack` also searches stack traces, and `A OR B` matches either. A malformed query explains itself in the status bar instead of failing silently.

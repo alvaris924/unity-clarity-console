@@ -28,6 +28,8 @@ namespace ClarityConsole.UI
         private readonly HashSet<string> _selectedChannels = new HashSet<string>(StringComparer.Ordinal);
         private readonly bool[] _severityVisible = new bool[SeverityCount];
         private LogQuery _query = LogQuery.Empty;
+        private IgnoreList _ignoreList = IgnoreList.Empty;
+        private int _ignored;
         private bool _collapse;
         private int _pendingEvictions;
 
@@ -81,6 +83,20 @@ namespace ClarityConsole.UI
 
         /// <summary>Why the current query cannot be used, or null when it is fine.</summary>
         public string QueryError => _query.Error;
+
+        /// <summary>Rules that silence entries. Entries stay in the store, so removing a rule brings them back.</summary>
+        public IgnoreList IgnoreList
+        {
+            get => _ignoreList;
+            set
+            {
+                _ignoreList = value ?? IgnoreList.Empty;
+                Rebuild();
+            }
+        }
+
+        /// <summary>Retained entries silenced by the ignore rules, whatever the other filters say.</summary>
+        public int IgnoredCount => _ignored;
 
         /// <summary>Groups log rows with the same severity and message; counts are read through <see cref="CountAt"/>.</summary>
         public bool Collapse
@@ -159,6 +175,7 @@ namespace ClarityConsole.UI
             _counts.Clear();
             _groups.Clear();
             _pendingEvictions = 0;
+            _ignored = 0;
 
             foreach (LogEntry entry in Store.Entries)
             {
@@ -203,6 +220,12 @@ namespace ClarityConsole.UI
 
         private bool Add(LogEntry entry)
         {
+            if (_ignoreList.ShouldIgnore(entry))
+            {
+                _ignored++;
+                return false;
+            }
+
             if (!Matches(entry))
             {
                 return false;

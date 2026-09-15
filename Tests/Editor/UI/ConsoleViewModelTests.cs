@@ -218,6 +218,53 @@ namespace ClarityConsole.Tests.UI
             Assert.That(model.Visible.Count, Is.EqualTo(2));
         }
 
+        [Test]
+        public void IgnoreList_HidesMatchingEntries_AndCountsThem()
+        {
+            var store = new LogStore(capacity: 16) { ChannelExtractor = new ChannelExtractor() };
+            using var model = new ConsoleViewModel(store);
+            store.Append(Entry(LogSeverity.Log, "[Noisy] tick 1"));
+            store.Append(Entry(LogSeverity.Log, "[Noisy] tick 2"));
+            store.Append(Entry(LogSeverity.Error, "[Net] real problem"));
+
+            model.IgnoreList = new IgnoreList(new[] { new IgnoreRule(IgnoreMatch.Channel, "Noisy") });
+
+            Assert.That(model.Visible.Select(e => e.Message), Is.EqualTo(new[] { "[Net] real problem" }));
+            Assert.That(model.IgnoredCount, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void IgnoreList_CountsIndependentlyOfSearch_AndIsUndoneByClearingIt()
+        {
+            var store = new LogStore(capacity: 16) { ChannelExtractor = new ChannelExtractor() };
+            using var model = new ConsoleViewModel(store);
+            store.Append(Entry(LogSeverity.Log, "tick"));
+            store.Append(Entry(LogSeverity.Log, "keep me"));
+            model.IgnoreList = new IgnoreList(new[] { new IgnoreRule(IgnoreMatch.Contains, "tick") });
+
+            model.Search = "nothing matches this";
+            Assert.That(model.Visible, Is.Empty);
+            Assert.That(model.IgnoredCount, Is.EqualTo(1), "ignored entries are counted before the query runs");
+
+            model.Search = string.Empty;
+            model.IgnoreList = null;
+            Assert.That(model.Visible.Count, Is.EqualTo(2));
+            Assert.That(model.IgnoredCount, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void IgnoreList_NeverHidesMarkers()
+        {
+            var store = new LogStore(capacity: 16);
+            using var model = new ConsoleViewModel(store);
+            store.Append(LogEntry.Marker("Domain reloaded", DateTime.UtcNow, 0));
+
+            model.IgnoreList = new IgnoreList(new[] { new IgnoreRule(IgnoreMatch.Contains, "Domain") });
+
+            Assert.That(model.Visible.Count, Is.EqualTo(1));
+            Assert.That(model.IgnoredCount, Is.EqualTo(0));
+        }
+
         private static LogEntry Entry(LogSeverity severity, string message)
         {
             return new LogEntry(LogEntryKind.Log, severity, message, string.Empty, DateTime.UtcNow, 0, 1, true, ObjectRef.None);
