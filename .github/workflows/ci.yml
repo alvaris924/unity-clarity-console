@@ -30,7 +30,7 @@ jobs:
           fi
 
   editmode:
-    name: EditMode ${{ matrix.unityVersion }}
+    name: EditMode tests
     needs: license
     if: needs.license.outputs.available == 'true'
     runs-on: ubuntu-latest
