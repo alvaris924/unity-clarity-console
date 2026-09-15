@@ -56,8 +56,17 @@ namespace ClarityConsole.Capture
         /// </summary>
         public bool HandlerChainBroken { get; private set; }
 
+        /// <summary>Raised on the main thread after a drain that moved at least one entry into the store.</summary>
+        public event Action Drained;
+
         /// <summary>Must be called on the main thread.</summary>
         public void Start()
+        {
+            Start("Domain loaded");
+        }
+
+        /// <summary>Must be called on the main thread. <paramref name="marker"/> is appended first; null appends nothing.</summary>
+        public void Start(string marker)
         {
             if (IsStarted)
             {
@@ -67,7 +76,7 @@ namespace ClarityConsole.Capture
             _mainThreadId = Thread.CurrentThread.ManagedThreadId;
             if (_sessionStateKey != null)
             {
-                Store.CurrentSession = SessionState.GetInt(_sessionStateKey, 0);
+                Store.CurrentSession = Math.Max(Store.CurrentSession, SessionState.GetInt(_sessionStateKey, 0));
             }
 
             _previousHandler = Debug.unityLogger.logHandler;
@@ -78,7 +87,10 @@ namespace ClarityConsole.Capture
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
             IsStarted = true;
 
-            AppendMarker("Domain loaded");
+            if (marker != null)
+            {
+                AppendMarker(marker);
+            }
         }
 
         /// <summary>Unsubscribes and restores the previous log handler. Safe to call more than once.</summary>
@@ -135,6 +147,12 @@ namespace ClarityConsole.Capture
             if (dropped > 0)
             {
                 Store.Append(LogEntry.Marker($"{dropped} entries dropped: capture queue exceeded {_maxQueued}", DateTime.UtcNow, _frame));
+                moved++;
+            }
+
+            if (moved > 0)
+            {
+                Drained?.Invoke();
             }
 
             return moved;

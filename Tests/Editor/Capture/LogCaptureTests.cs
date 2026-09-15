@@ -57,6 +57,24 @@ namespace ClarityConsole.Tests.Capture
         }
 
         [Test]
+        public void Start_WithCustomMarker_UsesIt_AndDrainedFiresPerDrain()
+        {
+            _capture.Stop();
+            var store = new LogStore(capacity: 16);
+            using var capture = new LogCapture(store);
+            int drained = 0;
+            capture.Drained += () => drained++;
+
+            capture.Start("Editor started");
+            Debug.Log($"{Tag} after start");
+            capture.DrainAll();
+            capture.DrainAll();
+
+            Assert.That(store[0].Message, Is.EqualTo("Editor started"));
+            Assert.That(drained, Is.EqualTo(1), "an empty drain raises nothing");
+        }
+
+        [Test]
         public void Log_IsCapturedWithSeverityThreadAndSequence()
         {
             Debug.Log($"{Tag} plain message");

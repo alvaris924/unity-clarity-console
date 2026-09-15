@@ -93,6 +93,43 @@ namespace ClarityConsole.Tests.Core
             Assert.Throws<ArgumentNullException>(() => store.Append(null));
         }
 
+        [Test]
+        public void Restore_KeepsIdsAndSessions_ContinuesSequence_AndRaisesNoAppendEvent()
+        {
+            var store = new LogStore(capacity: 8);
+            int appended = 0;
+            store.EntryAppended += _ => appended++;
+
+            LogEntry first = Entry(LogSeverity.Error);
+            first.AssignSequence(41, 2);
+            LogEntry second = Entry(LogSeverity.Log);
+            second.AssignSequence(42, 5);
+            store.Restore(first);
+            store.Restore(second);
+            store.Append(Entry(LogSeverity.Warning));
+
+            Assert.That(appended, Is.EqualTo(1));
+            Assert.That(store.Entries.Select(e => e.Id), Is.EqualTo(new long[] { 41, 42, 43 }));
+            Assert.That(store[2].Session, Is.EqualTo(5), "session continues from the highest restored value");
+            Assert.That(store.CountOf(LogSeverity.Error), Is.EqualTo(1));
+            Assert.That(store.CountOf(LogSeverity.Warning), Is.EqualTo(1));
+        }
+
+        [Test]
+        public void Restore_BeyondCapacity_KeepsTheTail()
+        {
+            var store = new LogStore(capacity: 2);
+            for (int i = 1; i <= 3; i++)
+            {
+                LogEntry entry = Entry(LogSeverity.Log);
+                entry.AssignSequence(i, 0);
+                store.Restore(entry);
+            }
+
+            Assert.That(store.Entries.Select(e => e.Id), Is.EqualTo(new long[] { 2, 3 }));
+            Assert.That(store.CountOf(LogSeverity.Log), Is.EqualTo(2));
+        }
+
         private static LogEntry Entry(LogSeverity severity)
         {
             return new LogEntry(LogEntryKind.Log, severity, "message", string.Empty, DateTime.UtcNow, 0, 1, true, ObjectRef.None);

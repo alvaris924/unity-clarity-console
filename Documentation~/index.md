@@ -21,6 +21,15 @@ Clarity Console is an open-source, dependency-free Console window replacement fo
 - [ADR-0003: Zero third-party dependencies](adr/0003-dependency-policy.md)
 - [ADR-0004: GitHub flow with tags, no development branch](adr/0004-branching-model.md)
 
+## Where things are stored
+
+| Data | Location | Survives |
+|---|---|---|
+| Captured entries | `Library/ClarityConsole/journal-*.bin`, segmented, 32 MB budget by default | Domain reload, Play mode, Editor restart, Editor crash up to the last drain |
+| Play session counter | `SessionState` | Domain reload; continues from the journal after a restart |
+
+Clear in the window deletes the journal. Deleting the folder while the Editor is closed has the same effect.
+
 ## Working on the package
 
 Open `DevProject~` in Unity 6000.2 or newer, or run the EditMode tests headlessly:
