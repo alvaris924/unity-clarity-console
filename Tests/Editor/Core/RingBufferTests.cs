@@ -46,6 +46,17 @@ namespace ClarityConsole.Tests.Core
         }
 
         [Test]
+        public void Append_ReportsTheEvictedItem()
+        {
+            var buffer = new RingBuffer<int>(2);
+
+            Assert.That(buffer.Append(1, out int evicted), Is.False);
+            Assert.That(buffer.Append(2, out evicted), Is.False);
+            Assert.That(buffer.Append(3, out evicted), Is.True);
+            Assert.That(evicted, Is.EqualTo(1));
+        }
+
+        [Test]
         public void Indexer_OutsideRetainedRange_Throws()
         {
             var buffer = new RingBuffer<int>(2);

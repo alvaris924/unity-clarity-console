@@ -52,18 +52,32 @@ namespace ClarityConsole.Core
 
         public void Append(T item)
         {
-            if (_count == _items.Length)
+            Append(item, out _);
+        }
+
+        /// <summary>
+        /// Appends an item. Returns true when an older item was overwritten, in which case
+        /// <paramref name="evicted"/> holds it so callers can keep derived counts in step.
+        /// </summary>
+        public bool Append(T item, out T evicted)
+        {
+            bool overwrote = _count == _items.Length;
+
+            if (overwrote)
             {
+                evicted = _items[_head];
                 _items[_head] = item;
                 _head = (_head + 1) % _items.Length;
             }
             else
             {
+                evicted = default;
                 _items[(_head + _count) % _items.Length] = item;
                 _count++;
             }
 
             Appended++;
+            return overwrote;
         }
 
         public void Clear()
