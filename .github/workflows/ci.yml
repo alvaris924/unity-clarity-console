@@ -63,7 +63,7 @@ jobs:
           checkName: EditMode ${{ matrix.unityVersion }} results
           githubToken: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: editmode-results-${{ matrix.unityVersion }}
