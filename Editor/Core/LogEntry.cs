@@ -58,6 +58,12 @@ namespace ClarityConsole.Core
         /// <summary>Play session the entry belongs to; 0 before the first Play in this Editor run.</summary>
         public int Session { get; private set; }
 
+        /// <summary>
+        /// Channel this entry belongs to, taken from a message prefix such as <c>[Tag]</c>, or empty.
+        /// Assigned by <see cref="LogStore"/> on insert, so it also covers entries restored from the journal.
+        /// </summary>
+        public string Channel { get; internal set; } = string.Empty;
+
         /// <summary>The stack trace split into frames. Parsed on first access and cached; never on the capture path.</summary>
         public ParsedTrace Trace => _trace ?? (_trace = StackTraceParser.Parse(StackTrace));
 

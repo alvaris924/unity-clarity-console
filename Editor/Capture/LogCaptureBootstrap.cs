@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using ClarityConsole.Core;
+using ClarityConsole.Settings;
 using UnityEditor;
 using UnityEngine;
 
@@ -25,7 +26,7 @@ namespace ClarityConsole.Capture
             bool freshEditorSession = !SessionState.GetBool(EditorSessionKey, false);
             SessionState.SetBool(EditorSessionKey, true);
 
-            Store = new LogStore();
+            Store = new LogStore { ChannelExtractor = new ChannelExtractor(ClarityConsoleSettings.instance.ChannelPattern) };
             Journal = new LogJournal(JournalDirectory);
             RestoreJournal(freshEditorSession);
 
@@ -36,6 +37,7 @@ namespace ClarityConsole.Capture
             Capture.Drained += Journal.Flush;
             Capture.Start(freshEditorSession ? "Editor started" : "Domain reloaded");
 
+            ClarityConsoleSettings.Changed += OnSettingsChanged;
             AssemblyReloadEvents.beforeAssemblyReload += Shutdown;
             EditorApplication.quitting += Shutdown;
         }
@@ -76,8 +78,14 @@ namespace ClarityConsole.Capture
             RestoredCount = restored.Count;
         }
 
+        private static void OnSettingsChanged()
+        {
+            Store.ReassignChannels(new ChannelExtractor(ClarityConsoleSettings.instance.ChannelPattern));
+        }
+
         private static void Shutdown()
         {
+            ClarityConsoleSettings.Changed -= OnSettingsChanged;
             Capture.Stop();
             Journal.Flush();
             Journal.Dispose();

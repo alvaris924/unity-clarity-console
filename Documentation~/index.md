@@ -21,12 +21,17 @@ Clarity Console is an open-source, dependency-free Console window replacement fo
 - [ADR-0003: Zero third-party dependencies](adr/0003-dependency-policy.md)
 - [ADR-0004: GitHub flow with tags, no development branch](adr/0004-branching-model.md)
 
+## Settings
+
+Project Settings > Clarity Console holds the settings a team shares through version control. Today that is the channel pattern: a regular expression whose first group names the channel of a message, `^\[([\w.\- ]{1,64})\]` by default, so `[PlayFabCBSManager] ...` belongs to channel `PlayFabCBSManager`. Changing it re-channels the entries already captured.
+
 ## Where things are stored
 
 | Data | Location | Survives |
 |---|---|---|
 | Captured entries | `Library/ClarityConsole/journal-*.bin`, segmented, 32 MB budget by default | Domain reload, Play mode, Editor restart, Editor crash up to the last drain |
 | Play session counter | `SessionState` | Domain reload; continues from the journal after a restart |
+| Project settings | `ProjectSettings/ClarityConsole.asset` | Everything; commit it with the project |
 
 Clear in the window deletes the journal. Deleting the folder while the Editor is closed has the same effect.
 

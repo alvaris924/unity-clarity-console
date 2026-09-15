@@ -25,6 +25,7 @@ namespace ClarityConsole.UI
         private readonly List<LogEntry> _visible = new List<LogEntry>();
         private readonly List<int> _counts = new List<int>();
         private readonly Dictionary<CollapseKey, int> _groups = new Dictionary<CollapseKey, int>();
+        private readonly HashSet<string> _selectedChannels = new HashSet<string>(StringComparer.Ordinal);
         private readonly bool[] _severityVisible = new bool[SeverityCount];
         private string _search = string.Empty;
         private bool _collapse;
@@ -41,6 +42,7 @@ namespace ClarityConsole.UI
             Store.EntryAppended += OnAppended;
             Store.EntryEvicted += OnEvicted;
             Store.Cleared += OnCleared;
+            Store.ChannelsReassigned += OnChannelsReassigned;
             Rebuild();
         }
 
@@ -53,6 +55,9 @@ namespace ClarityConsole.UI
 
         /// <summary>True when evicted entries are still listed and the next <see cref="Flush"/> will rebuild.</summary>
         public bool NeedsRebuild => _pendingEvictions > 0;
+
+        /// <summary>Channels the list is narrowed to. Empty means every channel is shown.</summary>
+        public IReadOnlyCollection<string> SelectedChannels => _selectedChannels;
 
         /// <summary>Case-insensitive substring applied to the message. Markers always pass.</summary>
         public string Search
@@ -103,6 +108,36 @@ namespace ClarityConsole.UI
             Rebuild();
         }
 
+        public bool IsChannelSelected(string channel)
+        {
+            return channel != null && _selectedChannels.Contains(channel);
+        }
+
+        public void SetChannelSelected(string channel, bool selected)
+        {
+            if (string.IsNullOrEmpty(channel))
+            {
+                return;
+            }
+
+            bool changed = selected ? _selectedChannels.Add(channel) : _selectedChannels.Remove(channel);
+            if (changed)
+            {
+                Rebuild();
+            }
+        }
+
+        public void ClearChannelSelection()
+        {
+            if (_selectedChannels.Count == 0)
+            {
+                return;
+            }
+
+            _selectedChannels.Clear();
+            Rebuild();
+        }
+
         /// <summary>Folds pending evictions in. Free when nothing is pending; call once per UI refresh.</summary>
         public void Flush()
         {
@@ -132,6 +167,7 @@ namespace ClarityConsole.UI
             Store.EntryAppended -= OnAppended;
             Store.EntryEvicted -= OnEvicted;
             Store.Cleared -= OnCleared;
+            Store.ChannelsReassigned -= OnChannelsReassigned;
         }
 
         private void OnAppended(LogEntry entry)
@@ -149,6 +185,13 @@ namespace ClarityConsole.UI
 
         private void OnCleared()
         {
+            Rebuild();
+        }
+
+        private void OnChannelsReassigned()
+        {
+            // Channels that no longer exist cannot match anything, so drop them from the selection.
+            _selectedChannels.RemoveWhere(channel => Store.CountOfChannel(channel) == 0);
             Rebuild();
         }
 
@@ -184,6 +227,11 @@ namespace ClarityConsole.UI
             }
 
             if (!_severityVisible[(int)entry.Severity])
+            {
+                return false;
+            }
+
+            if (_selectedChannels.Count > 0 && !_selectedChannels.Contains(entry.Channel))
             {
                 return false;
             }

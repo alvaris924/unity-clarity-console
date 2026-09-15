@@ -31,6 +31,7 @@ namespace ClarityConsole.UI
         private ToolbarToggle _warningToggle;
         private ToolbarToggle _errorToggle;
         private ToolbarSearchField _searchField;
+        private ChannelBar _channels;
         private DetailView _detail;
         private readonly SourceNavigator _navigator = new SourceNavigator();
         private Label _status;
@@ -93,6 +94,10 @@ namespace ClarityConsole.UI
 
             root.Add(BuildToolbar());
 
+            _channels = new ChannelBar();
+            _channels.ChannelToggled += OnChannelToggled;
+            root.Add(_channels);
+
             var split = new TwoPaneSplitView(1, 140, TwoPaneSplitViewOrientation.Vertical);
             split.AddToClassList("cc-split");
             _list = BuildList();
@@ -115,6 +120,7 @@ namespace ClarityConsole.UI
             _list.itemsSource = _viewModel.Visible;
             root.schedule.Execute(UpdateCounts).Every(CountsIntervalMs);
             UpdateCounts();
+            RefreshChannels();
             RequestRefresh();
         }
 
@@ -321,6 +327,18 @@ namespace ClarityConsole.UI
             UpdateStatus();
         }
 
+        private void OnChannelToggled(string channel, bool selected)
+        {
+            _viewModel.SetChannelSelected(channel, selected);
+            RefreshChannels();
+        }
+
+        /// <summary>Redraws the chip row; a no-op unless the channels, counts or selection changed.</summary>
+        private void RefreshChannels()
+        {
+            _channels?.Refresh(_viewModel.Store.ChannelCounts, _viewModel.IsChannelSelected);
+        }
+
         private void OnListScrolled(float value)
         {
             _stickToBottom = value >= _listScrollView.verticalScroller.highValue - RowHeight;
@@ -386,6 +404,7 @@ namespace ClarityConsole.UI
             _logToggle.text = store.CountOf(LogSeverity.Log).ToString();
             _warningToggle.text = store.CountOf(LogSeverity.Warning).ToString();
             _errorToggle.text = (store.CountOf(LogSeverity.Error) + store.CountOf(LogSeverity.Exception) + store.CountOf(LogSeverity.Assert)).ToString();
+            RefreshChannels();
             UpdateStatus();
         }
 
