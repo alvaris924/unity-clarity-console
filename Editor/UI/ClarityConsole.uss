@@ -26,6 +26,15 @@
     flex-grow: 1;
 }
 
+.cc-search-invalid {
+    border-color: var(--cc-error);
+    border-width: 1px;
+}
+
+.cc-status-error {
+    color: var(--cc-error);
+}
+
 .cc-channels {
     flex-direction: row;
     flex-wrap: wrap;

@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ### Added
 
+- Query language in the search field: terms are joined by AND, `"quoted phrases"` match exactly, `-term` excludes, `/regex/i` matches a pattern, `sev:error,warn` and `tag:PlayFab*` filter, `in:stack` also searches stack traces, and `A OR B` matches either. A malformed query explains itself in the status bar instead of failing silently.
 - Channels: messages that start with a tag such as `[PlayFabCBSManager]` are grouped into channels, shown as a row of chips with live counts under the toolbar. Clicking chips narrows the list to those channels, and the pattern is configurable in Project Settings under Clarity Console.
 - Persistence: entries are journaled to `Library/ClarityConsole/` and restored after every domain reload and Editor restart, so the window no longer empties on recompile. The journal is segmented with a 32 MB budget, tolerates a torn tail after a crash, and is reset by Clear. Markers now read "Editor started" or "Domain reloaded"; context objects from a previous Editor session are dropped because their ids no longer resolve.
 - Stack frames: the detail pane lists every frame of the selected entry, frames with a source location are links that open the file at that line in the configured code editor, double-clicking a row opens the first user frame, and selecting a row pings the entry's context object in the Hierarchy or Project window.

@@ -27,7 +27,7 @@ namespace ClarityConsole.UI
         private readonly Dictionary<CollapseKey, int> _groups = new Dictionary<CollapseKey, int>();
         private readonly HashSet<string> _selectedChannels = new HashSet<string>(StringComparer.Ordinal);
         private readonly bool[] _severityVisible = new bool[SeverityCount];
-        private string _search = string.Empty;
+        private LogQuery _query = LogQuery.Empty;
         private bool _collapse;
         private int _pendingEvictions;
 
@@ -59,22 +59,28 @@ namespace ClarityConsole.UI
         /// <summary>Channels the list is narrowed to. Empty means every channel is shown.</summary>
         public IReadOnlyCollection<string> SelectedChannels => _selectedChannels;
 
-        /// <summary>Case-insensitive substring applied to the message. Markers always pass.</summary>
+        /// <summary>
+        /// The search query, in the syntax of <see cref="LogQuery"/>. A malformed query matches nothing
+        /// and explains itself through <see cref="QueryError"/>. Markers always pass.
+        /// </summary>
         public string Search
         {
-            get => _search;
+            get => _query.Text;
             set
             {
                 value = value ?? string.Empty;
-                if (_search == value)
+                if (_query.Text == value)
                 {
                     return;
                 }
 
-                _search = value;
+                _query = LogQuery.Parse(value);
                 Rebuild();
             }
         }
+
+        /// <summary>Why the current query cannot be used, or null when it is fine.</summary>
+        public string QueryError => _query.Error;
 
         /// <summary>Groups log rows with the same severity and message; counts are read through <see cref="CountAt"/>.</summary>
         public bool Collapse
@@ -236,7 +242,7 @@ namespace ClarityConsole.UI
                 return false;
             }
 
-            return _search.Length == 0 || entry.Message.IndexOf(_search, StringComparison.OrdinalIgnoreCase) >= 0;
+            return _query.Matches(entry);
         }
 
         private readonly struct CollapseKey : IEquatable<CollapseKey>

@@ -21,6 +21,23 @@ Clarity Console is an open-source, dependency-free Console window replacement fo
 - [ADR-0003: Zero third-party dependencies](adr/0003-dependency-policy.md)
 - [ADR-0004: GitHub flow with tags, no development branch](adr/0004-branching-model.md)
 
+## Searching
+
+The search field takes a small query language. Terms are joined by an implicit AND.
+
+| Syntax | Meaning |
+|---|---|
+| `word` | Case-insensitive substring of the message |
+| `"two words"` | The phrase, still case-insensitive |
+| `-term` | Excludes; works with any term type |
+| `/regex/i` | .NET regular expression; flags `i` and `m` |
+| `sev:error,warn` | Severity list: log, warn, error, exception, assert |
+| `tag:PlayFab*` | Channel, with `*` and `?` wildcards |
+| `in:stack` | Text and regex terms also search stack traces |
+| `A OR B` | Either side; binds tighter than the implicit AND |
+
+Session markers always show, whatever the query, so the stream keeps its shape. A query that cannot be parsed matches nothing and says why in the status bar.
+
 ## Settings
 
 Project Settings > Clarity Console holds the settings a team shares through version control. Today that is the channel pattern: a regular expression whose first group names the channel of a message, `^\[([\w.\- ]{1,64})\]` by default, so `[PlayFabCBSManager] ...` belongs to channel `PlayFabCBSManager`. Changing it re-channels the entries already captured.
