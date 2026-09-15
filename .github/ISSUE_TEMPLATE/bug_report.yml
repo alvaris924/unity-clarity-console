@@ -1,0 +1,63 @@
+name: Bug report
+description: Something in Clarity Console does not work as documented
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for the report. Unity version and reproduction steps matter most.
+  - type: input
+    id: unity-version
+    attributes:
+      label: Unity version
+      placeholder: "6000.0.45f1"
+    validations:
+      required: true
+  - type: input
+    id: package-version
+    attributes:
+      label: Clarity Console version
+      description: From the Package Manager or package.json, or the commit hash if installed from a branch
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Editor OS
+      options:
+        - Windows
+        - macOS
+        - Linux
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, what you saw instead
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open Window > Clarity Console
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Editor log or stack trace
+      description: Relevant lines from Editor.log or the exception text. Rendered as code automatically.
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues
+          required: true
+        - label: I can reproduce this with no other console or logging package installed
