@@ -2,7 +2,7 @@
 
 Fast, searchable, dependency-free Console window for the Unity Editor.
 
-> **Status: pre-release.** The package scaffold, the CI pipeline and the contribution workflow are in place. The console window itself is under construction; follow the [milestones](https://github.com/alvaris924/unity-clarity-console/milestones).
+> **Status: pre-release.** Live log capture and the first window are in: a virtualized list with severity toggles, search, collapse and a detail pane. Clickable stack frames, persistence across reloads and the query language come next; follow the [milestones](https://github.com/alvaris924/unity-clarity-console/milestones).
 
 ## What it will do
 
