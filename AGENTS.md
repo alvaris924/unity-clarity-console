@@ -28,6 +28,7 @@ Clarity Console is an open-source, dependency-free Console window replacement fo
 - UI Toolkit element trees are built in C# and styled with USS. No UXML custom-element registration, so 2022.3 and 6000.x share one code path.
 - Logic in `ClarityConsole.Core` ships with EditMode tests. Stack-trace fixtures come from real Mono and IL2CPP output.
 - Style per `.editorconfig`: Allman braces, four spaces, LF, UTF-8 without BOM, `_camelCase` private fields, C# 9 as Unity compiles it (no records, no init-only setters).
+- Clean room: never read, decompile or copy code from proprietary plugins, and never reproduce their UI text, icons or docs. Features come from public Unity APIs and this project's own design. If such a plugin is present in the host project, do not open its files while working on this package.
 
 ## Definition of done for a pull request
 

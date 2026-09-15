@@ -57,6 +57,10 @@ The hooks reject commit messages that are not Conventional Commits and refuse di
 - Logic in `ClarityConsole.Core` ships with EditMode tests. Stack-trace fixtures come from real Mono and IL2CPP output.
 - Formatting follows `.editorconfig`: Allman braces, four spaces, LF, UTF-8 without BOM.
 
+## Clean-room policy
+
+Contributors must not read, decompile or copy code from proprietary or otherwise closed-source plugins, and must not reproduce their UI text, icons or documentation. Every feature is designed from public Unity APIs, Unity documentation and this project's own design notes. Feature parity with other tools is fine; copied expression is not. If you have worked on a comparable proprietary product's source, do not contribute to the feature it covers.
+
 ## Working with AI assistants
 
 The same rules apply. Assistants never push to `main`, never force-push, and open pull requests like any other contributor. The binding instructions for every assistant are in `AGENTS.md`; `CLAUDE.md` and `.github/copilot-instructions.md` defer to it.
