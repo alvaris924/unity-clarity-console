@@ -44,7 +44,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: DevProject~/Library
           key: Library-${{ matrix.unityVersion }}-${{ hashFiles('DevProject~/Packages/manifest.json', 'package.json') }}
