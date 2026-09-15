@@ -15,6 +15,12 @@ namespace ClarityConsole.Settings
         [SerializeField]
         private string _channelPattern = ChannelExtractor.DefaultPattern;
 
+        [SerializeField]
+        private int _sourcePreviewRadius = SourceCache.DefaultRadius;
+
+        public const int MinSourcePreviewRadius = 0;
+        public const int MaxSourcePreviewRadius = 20;
+
         /// <summary>Raised after any setting changes, on the main thread.</summary>
         public static event Action Changed;
 
@@ -35,9 +41,27 @@ namespace ClarityConsole.Settings
             }
         }
 
+        /// <summary>How many source lines to show on each side of the line a stack frame points at.</summary>
+        public int SourcePreviewRadius
+        {
+            get => Mathf.Clamp(_sourcePreviewRadius, MinSourcePreviewRadius, MaxSourcePreviewRadius);
+            set
+            {
+                int clamped = Mathf.Clamp(value, MinSourcePreviewRadius, MaxSourcePreviewRadius);
+                if (_sourcePreviewRadius == clamped)
+                {
+                    return;
+                }
+
+                _sourcePreviewRadius = clamped;
+                Persist();
+            }
+        }
+
         public void ResetToDefaults()
         {
             _channelPattern = ChannelExtractor.DefaultPattern;
+            _sourcePreviewRadius = SourceCache.DefaultRadius;
             Persist();
         }
 

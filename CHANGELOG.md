@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ### Added
 
+- Source preview: selecting a stack frame shows the lines around it with the frame's own line highlighted, read straight from disk and re-read when the file changes. Clicking a frame now selects and previews it; double-clicking it, or the preview, opens the file in the code editor. The number of lines is configurable in Project Settings.
 - Query language in the search field: terms are joined by AND, `"quoted phrases"` match exactly, `-term` excludes, `/regex/i` matches a pattern, `sev:error,warn` and `tag:PlayFab*` filter, `in:stack` also searches stack traces, and `A OR B` matches either. A malformed query explains itself in the status bar instead of failing silently.
 - Channels: messages that start with a tag such as `[PlayFabCBSManager]` are grouped into channels, shown as a row of chips with live counts under the toolbar. Clicking chips narrows the list to those channels, and the pattern is configurable in Project Settings under Clarity Console.
 - Persistence: entries are journaled to `Library/ClarityConsole/` and restored after every domain reload and Editor restart, so the window no longer empties on recompile. The journal is segmented with a 32 MB budget, tolerates a torn tail after a crash, and is reset by Clear. Markers now read "Editor started" or "Domain reloaded"; context objects from a previous Editor session are dropped because their ids no longer resolve.
@@ -18,3 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 - Repository workflow: contribution guide, `AGENTS.md` rules for AI assistants, local git hooks, pull request and issue templates, Conventional Commit title check, Dependabot for GitHub Actions.
 
 [Unreleased]: https://github.com/alvaris924/unity-clarity-console/commits/main
+
+### Fixed
+
+- The journal no longer keeps old entries when Clear cannot delete its file because something else holds it open; the file is emptied instead, and a journal that resumes an existing segment now reports its true size.

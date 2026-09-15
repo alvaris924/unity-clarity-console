@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using ClarityConsole.Core;
 using ClarityConsole.UI;
@@ -53,6 +54,61 @@ namespace ClarityConsole.Tests.UI
 
             Assert.That(view.FrameRowCount, Is.EqualTo(0));
             Assert.That(view.Q<TextField>().value, Is.EqualTo("Entered Play mode"));
+        }
+
+        [Test]
+        public void Show_SelectsTheEntryFrame_AndPreviewsIt()
+        {
+            var view = new DetailView();
+            var asked = new List<TraceFrame>();
+            view.SnippetProvider = frame =>
+            {
+                asked.Add(frame);
+                return new SourceSnippet("Assets/Game/Foo.cs", 19, new[] { "a", "b", "c" }, 1);
+            };
+
+            view.Show(Entry("boom", Trace("UnityEngine.Debug:Log (object)", "Game.Foo:Bar () (at Assets/Game/Foo.cs:20)")));
+
+            Assert.That(view.SelectedFrame, Is.Not.Null);
+            Assert.That(view.SelectedFrame.Line, Is.EqualTo(20));
+            Assert.That(asked.Count, Is.EqualTo(1));
+            Assert.That(view.IsPreviewVisible, Is.True);
+            Label row = view.Query<Label>(className: DetailView.FrameSelectedClass).First();
+            Assert.That(row.text, Does.Contain("Foo.cs:20"));
+        }
+
+        [Test]
+        public void SelectFrame_MovesThePreview_AndHidesItForFramesWithoutALocation()
+        {
+            var view = new DetailView();
+            view.SnippetProvider = frame => new SourceSnippet(frame.FilePath, frame.Line, new[] { "x" }, 0);
+            LogEntry entry = Entry("boom", Trace("Game.A:One () (at Assets/A.cs:1)", "Game.B:Two () (at Assets/B.cs:2)"));
+            view.Show(entry);
+
+            TraceFrame second = entry.Trace.Frames[1];
+            view.SelectFrame(second);
+
+            Assert.That(view.SelectedFrame, Is.SameAs(second));
+            Assert.That(view.Query<Label>(className: DetailView.FrameSelectedClass).ToList().Count, Is.EqualTo(1));
+
+            view.SelectFrame(null);
+            Assert.That(view.IsPreviewVisible, Is.False);
+        }
+
+        [Test]
+        public void Show_WithoutASnippetProvider_HidesThePreview()
+        {
+            var view = new DetailView();
+
+            view.Show(Entry("boom", "Game.Foo:Bar () (at Assets/Game/Foo.cs:20)"));
+
+            Assert.That(view.SelectedFrame, Is.Not.Null);
+            Assert.That(view.IsPreviewVisible, Is.False);
+        }
+
+        private static string Trace(params string[] frames)
+        {
+            return string.Join(Environment.NewLine, frames);
         }
 
         private static LogEntry Entry(string message, string stackTrace)

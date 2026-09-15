@@ -219,6 +219,55 @@ namespace ClarityConsole.Tests.Core
         }
 
         [Test]
+        public void Reset_WithALockedSegment_EmptiesItInsteadOfLeavingOldRecords()
+        {
+            string file;
+            using (var journal = new LogJournal(_directory))
+            {
+                journal.Append(Sequenced(Entry("old one"), 1));
+                journal.Append(Sequenced(Entry("old two"), 2));
+                journal.Flush();
+                file = Directory.GetFiles(_directory).Single();
+            }
+
+            using (var journal = new LogJournal(_directory))
+            {
+                journal.Load(dropContexts: false);
+
+                // Something else is holding the segment open, so it cannot be deleted.
+                using (new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    journal.Reset();
+                    Assert.That(journal.SizeBytes, Is.EqualTo(0));
+                    journal.Append(Sequenced(Entry("after reset"), 3));
+                }
+            }
+
+            using var reader = new LogJournal(_directory);
+            Assert.That(reader.Load(dropContexts: false).Select(e => e.Message), Is.EqualTo(new[] { "after reset" }));
+        }
+
+        [Test]
+        public void SizeBytes_MatchesTheFile_WhenAppendingToASegmentFromAnotherInstance()
+        {
+            using (var journal = new LogJournal(_directory))
+            {
+                journal.Append(Sequenced(Entry("one"), 1));
+                journal.Flush();
+            }
+
+            long onDisk = new FileInfo(Directory.GetFiles(_directory).Single()).Length;
+
+            using var second = new LogJournal(_directory);
+            second.Load(dropContexts: false);
+            second.Append(Sequenced(Entry("two"), 2));
+            second.Flush();
+
+            Assert.That(second.SizeBytes, Is.GreaterThan(onDisk));
+            Assert.That(second.SizeBytes, Is.EqualTo(new FileInfo(Directory.GetFiles(_directory).Single()).Length));
+        }
+
+        [Test]
         public void Constructor_RejectsBadArguments()
         {
             Assert.Throws<ArgumentException>(() => new LogJournal(string.Empty));

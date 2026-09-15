@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using ClarityConsole.Capture;
 using ClarityConsole.Core;
+using ClarityConsole.Settings;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -34,6 +35,7 @@ namespace ClarityConsole.UI
         private ChannelBar _channels;
         private DetailView _detail;
         private readonly SourceNavigator _navigator = new SourceNavigator();
+        private readonly SourceCache _sources = new SourceCache();
         private Label _status;
         private Texture _logIcon;
         private Texture _warningIcon;
@@ -104,6 +106,7 @@ namespace ClarityConsole.UI
             split.Add(_list);
             _detail = new DetailView();
             _detail.FrameActivated += OpenFrame;
+            _detail.SnippetProvider = TryGetSnippet;
             split.Add(_detail);
             root.Add(split);
 
@@ -304,6 +307,14 @@ namespace ClarityConsole.UI
             {
                 OpenFrame(entry.Trace.EntryFrame);
             }
+        }
+
+        /// <summary>Resolves a frame to a file and reads the lines around it, or null when it cannot.</summary>
+        private SourceSnippet TryGetSnippet(TraceFrame frame)
+        {
+            return _navigator.TryResolveAbsolutePath(frame, out string absolutePath)
+                ? _sources.TryGet(absolutePath, frame.Line, ClarityConsoleSettings.instance.SourcePreviewRadius)
+                : null;
         }
 
         private void OpenFrame(TraceFrame frame)
