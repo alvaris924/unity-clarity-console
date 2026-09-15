@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using ClarityConsole.Core;
 using UnityEditor;
 using UnityEngine;
@@ -9,6 +10,15 @@ namespace ClarityConsole.Settings
     /// Project-wide settings, stored in <c>ProjectSettings/</c> so a team shares them through version
     /// control. Per-user preferences belong in <c>EditorPrefs</c> instead.
     /// </summary>
+    /// <summary>One serialized ignore rule. Kept simple so the settings file stays readable in review.</summary>
+    [Serializable]
+    internal sealed class IgnoreRuleSetting
+    {
+        public IgnoreMatch match;
+        public string pattern;
+        public bool enabled = true;
+    }
+
     [FilePath("ProjectSettings/ClarityConsole.asset", FilePathAttribute.Location.ProjectFolder)]
     internal sealed class ClarityConsoleSettings : ScriptableSingleton<ClarityConsoleSettings>
     {
@@ -23,6 +33,9 @@ namespace ClarityConsole.Settings
 
         [SerializeField]
         private string _hiddenFramePrefixes = string.Empty;
+
+        [SerializeField]
+        private List<IgnoreRuleSetting> _ignoreRules = new List<IgnoreRuleSetting>();
 
         public const int MinSourcePreviewRadius = 0;
         public const int MaxSourcePreviewRadius = 20;
@@ -97,6 +110,76 @@ namespace ClarityConsole.Settings
             }
         }
 
+        /// <summary>Rules that silence entries in the window. Edit through the methods below so the change is saved.</summary>
+        public IReadOnlyList<IgnoreRuleSetting> IgnoreRules => _ignoreRules;
+
+        /// <summary>Adds a rule unless an identical one is already there. Returns true when it was added.</summary>
+        public bool AddIgnoreRule(IgnoreMatch match, string pattern)
+        {
+            pattern = pattern ?? string.Empty;
+            if (pattern.Length == 0)
+            {
+                return false;
+            }
+
+            foreach (IgnoreRuleSetting existing in _ignoreRules)
+            {
+                if (existing.match == match && existing.pattern == pattern)
+                {
+                    return false;
+                }
+            }
+
+            _ignoreRules.Add(new IgnoreRuleSetting { match = match, pattern = pattern, enabled = true });
+            Persist();
+            return true;
+        }
+
+        public void RemoveIgnoreRule(int index)
+        {
+            if (index < 0 || index >= _ignoreRules.Count)
+            {
+                return;
+            }
+
+            _ignoreRules.RemoveAt(index);
+            Persist();
+        }
+
+        public void SetIgnoreRuleEnabled(int index, bool enabled)
+        {
+            if (index < 0 || index >= _ignoreRules.Count || _ignoreRules[index].enabled == enabled)
+            {
+                return;
+            }
+
+            _ignoreRules[index].enabled = enabled;
+            Persist();
+        }
+
+        public void ClearIgnoreRules()
+        {
+            if (_ignoreRules.Count == 0)
+            {
+                return;
+            }
+
+            _ignoreRules.Clear();
+            Persist();
+        }
+
+        /// <summary>The ignore list these settings describe.</summary>
+        public IgnoreList CreateIgnoreList()
+        {
+            var rules = new List<IgnoreRule>(_ignoreRules.Count);
+            foreach (IgnoreRuleSetting setting in _ignoreRules)
+            {
+                rules.Add(new IgnoreRule(setting.match, setting.pattern, setting.enabled));
+            }
+
+            return new IgnoreList(rules);
+        }
+
         /// <summary>The frame filter these settings describe.</summary>
         public FrameFilter CreateFrameFilter()
         {
@@ -109,6 +192,7 @@ namespace ClarityConsole.Settings
             _sourcePreviewRadius = SourceCache.DefaultRadius;
             _hideEngineFrames = true;
             _hiddenFramePrefixes = string.Empty;
+            _ignoreRules.Clear();
             Persist();
         }
 

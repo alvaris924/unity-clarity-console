@@ -42,6 +42,10 @@ Session markers always show, whatever the query, so the stream keeps its shape. 
 
 Project Settings > Clarity Console holds the settings a team shares through version control. Frame folding lives there: whether to fold engine frames, and which type-name prefixes of your own to fold, one per line, such as a logging wrapper or an async library. The source preview length lives there too: how many lines to show on each side of the line a stack frame points at, zero for just that line. The channel pattern is a regular expression whose first group names the channel of a message, `^\[([\w.\- ]{1,64})\]` by default, so `[PlayFabCBSManager] ...` belongs to channel `PlayFabCBSManager`. Changing it re-channels the entries already captured.
 
+## Ignoring messages
+
+Right-click a row to silence that exact message or its whole channel. Rules are listed in Project Settings, where each can be turned off without deleting it. Ignoring only hides entries from the window: they are still captured and journaled, so removing a rule brings them back, and the status bar always says how many are hidden.
+
 ## Where things are stored
 
 | Data | Location | Survives |

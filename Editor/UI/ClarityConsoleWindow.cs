@@ -109,6 +109,7 @@ namespace ClarityConsole.UI
             _detail.FrameActivated += OpenFrame;
             _detail.SnippetProvider = TryGetSnippet;
             _detail.FrameFilter = ClarityConsoleSettings.instance.CreateFrameFilter();
+            _viewModel.IgnoreList = ClarityConsoleSettings.instance.CreateIgnoreList();
             ClarityConsoleSettings.Changed += OnSettingsChanged;
             split.Add(_detail);
             root.Add(split);
@@ -224,7 +225,7 @@ namespace ClarityConsole.UI
                 title = "Message",
                 minWidth = 200,
                 stretchable = true,
-                makeCell = MakeLabelCell,
+                makeCell = MakeMessageCell,
                 bindCell = BindMessageCell,
             });
             list.columns.Add(new Column
@@ -247,6 +248,56 @@ namespace ClarityConsole.UI
             var label = new Label();
             label.AddToClassList("cc-cell");
             return label;
+        }
+
+        /// <summary>
+        /// A message cell carries its entry in <c>userData</c> so the context menu, which is attached once
+        /// per recycled cell, always acts on the row under the pointer.
+        /// </summary>
+        private VisualElement MakeMessageCell()
+        {
+            var label = new Label();
+            label.AddToClassList("cc-cell");
+            label.AddManipulator(new ContextualMenuManipulator(evt => BuildRowMenu(evt, label.userData as LogEntry)));
+            return label;
+        }
+
+        private void BuildRowMenu(ContextualMenuPopulateEvent evt, LogEntry entry)
+        {
+            if (entry == null)
+            {
+                return;
+            }
+
+            evt.menu.AppendAction("Copy message", _ => EditorGUIUtility.systemCopyBuffer = entry.Message);
+            evt.menu.AppendAction(
+                "Copy message and stack",
+                _ => EditorGUIUtility.systemCopyBuffer = entry.StackTrace.Length == 0
+                    ? entry.Message
+                    : entry.Message + Environment.NewLine + Environment.NewLine + entry.StackTrace);
+
+            if (entry.Kind == LogEntryKind.Marker)
+            {
+                return;
+            }
+
+            evt.menu.AppendSeparator();
+            evt.menu.AppendAction("Ignore this message", _ => AddIgnoreRule(IgnoreMatch.Message, entry.Message));
+            if (entry.Channel.Length > 0)
+            {
+                evt.menu.AppendAction("Ignore channel " + entry.Channel, _ => AddIgnoreRule(IgnoreMatch.Channel, entry.Channel));
+            }
+
+            evt.menu.AppendSeparator();
+            evt.menu.AppendAction("Manage ignore rules…", _ => SettingsService.OpenProjectSettings("Project/Clarity Console"));
+        }
+
+        private void AddIgnoreRule(IgnoreMatch match, string pattern)
+        {
+            if (ClarityConsoleSettings.instance.AddIgnoreRule(match, pattern))
+            {
+                ShowNotice("Ignoring " + new IgnoreRule(match, pattern).Describe() + ". Manage rules in Project Settings.");
+            }
         }
 
         private static VisualElement MakeIconCell()
@@ -272,6 +323,7 @@ namespace ClarityConsole.UI
         {
             LogEntry entry = _viewModel.Visible[index];
             var label = (Label)cell;
+            label.userData = entry;
             label.text = FirstLine(entry.Message);
             label.EnableInClassList("cc-marker", entry.Kind == LogEntryKind.Marker);
             label.EnableInClassList("cc-msg-warning", entry.Kind == LogEntryKind.Log && entry.Severity == LogSeverity.Warning);
@@ -371,6 +423,7 @@ namespace ClarityConsole.UI
             }
 
             _detail.FrameFilter = ClarityConsoleSettings.instance.CreateFrameFilter();
+            _viewModel.IgnoreList = ClarityConsoleSettings.instance.CreateIgnoreList();
             _sources.Clear();
             _detail.Show(FirstEntry(_list.selectedItems));
         }
@@ -471,7 +524,8 @@ namespace ClarityConsole.UI
             _status.RemoveFromClassList("cc-status-error");
             LogStore store = _viewModel.Store;
             double journalMb = LogCaptureBootstrap.Journal.SizeBytes / (1024.0 * 1024.0);
-            _status.text = $"{store.Count:N0} of {store.Capacity:N0} entries   ·   {_viewModel.Visible.Count:N0} shown   ·   session {store.CurrentSession}   ·   journal {journalMb:0.0} MB";
+            string ignored = _viewModel.IgnoredCount > 0 ? $"   ·   {_viewModel.IgnoredCount:N0} ignored" : string.Empty;
+            _status.text = $"{store.Count:N0} of {store.Capacity:N0} entries   ·   {_viewModel.Visible.Count:N0} shown{ignored}   ·   session {store.CurrentSession}   ·   journal {journalMb:0.0} MB";
         }
 
         private void LoadIcons()
