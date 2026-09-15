@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ### Added
 
+- Export: the toolbar's Export menu writes the rows currently shown to a text, Markdown or JSON file, or copies them to the clipboard, and every export carries a header naming the Unity version, the package version, the session and the filters that were active. The row context menu gains "Copy for a bug report", which copies one entry with its stack and that same header.
 - Watch rows: a message that starts with a watch key, `[watch:PlayerHP] 87` by default, takes over the row of the previous message with the same key instead of adding a new one, so a value logged every frame reads as one line that changes and carries an update count. Every update is still captured and journaled. The pattern is configurable in Project Settings and can be emptied to turn the behaviour off.
 - Ignore rules: right-click a row to silence that message or its whole channel, and the status bar says how many entries are hidden. Rules live in Project Settings where they can be turned off or removed; entries are only hidden from the window, so capture and the journal keep them and removing a rule brings them back.
 - A row context menu with copy actions: the message on its own, or the message with its stack trace.

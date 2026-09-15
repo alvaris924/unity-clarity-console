@@ -42,6 +42,10 @@ Session markers always show, whatever the query, so the stream keeps its shape. 
 
 Project Settings > Clarity Console holds the settings a team shares through version control. Frame folding lives there: whether to fold engine frames, and which type-name prefixes of your own to fold, one per line, such as a logging wrapper or an async library. The source preview length lives there too: how many lines to show on each side of the line a stack frame points at, zero for just that line. The channel pattern is a regular expression whose first group names the channel of a message, `^\[([\w.\- ]{1,64})\]` by default, so `[PlayFabCBSManager] ...` belongs to channel `PlayFabCBSManager`. Changing it re-channels the entries already captured.
 
+## Exporting
+
+The Export menu in the toolbar writes the rows currently shown, filters and all, as text, Markdown or JSON, or copies them to the clipboard. Every export starts with a header naming the Unity version, the package version, the session and which filters were active, so a pasted log says where it came from. Right-clicking a row offers the same for a single entry through "Copy for a bug report".
+
 ## Watching a value
 
 Logging `[watch:PlayerHP] 87` creates a row that later messages with the same key replace, rather than a new row each time. The row keeps its position, shows the newest value and counts the updates, which makes a per-frame value readable without flooding the list. Every update is still captured and journaled, so searching for an older value finds it. The key pattern is a project setting; emptying it turns watch rows off.
