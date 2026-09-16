@@ -27,13 +27,27 @@ namespace ClarityConsole.Tests.UI
         }
 
         [Test]
-        public void Show_ExpandsTabsSoColumnsLineUp()
+        public void Show_ExpandsTabs_AndDropsTheIndentationEveryLineShares()
         {
             var preview = new SourcePreview();
 
-            preview.Show(new SourceSnippet("a.cs", 1, new[] { "\tindented" }, 0), "a.cs");
+            preview.Show(new SourceSnippet("a.cs", 1, new[] { "\tif (a)", "\t\t    Boom();", "", "\t}" }, 1), "a.cs");
 
-            Assert.That(preview.Query<Label>(className: SourcePreview.LineClass).First().text, Is.EqualTo("1      indented"));
+            string[] lines = preview.Query<Label>(className: SourcePreview.LineClass).ToList().Select(l => l.text).ToArray();
+            Assert.That(lines[0], Is.EqualTo("1  if (a)"), "the shared tab is gone");
+            Assert.That(lines[1], Is.EqualTo("2          Boom();"), "the extra tab and spaces are kept, so nesting still reads");
+            Assert.That(lines[2], Is.EqualTo("3  "), "a blank line stays blank and does not count as indentation");
+            Assert.That(lines[3], Is.EqualTo("4  }"));
+        }
+
+        [TestCase(new[] { "    a", "      b" }, 4)]
+        [TestCase(new[] { "a", "    b" }, 0)]
+        [TestCase(new[] { "        ", "    x" }, 4)]
+        [TestCase(new[] { "", "   " }, 0)]
+        [TestCase(new string[0], 0)]
+        public void CommonIndent_IsTheSmallestIndentAmongLinesWithText(string[] lines, int expected)
+        {
+            Assert.That(SourcePreview.CommonIndent(lines), Is.EqualTo(expected));
         }
 
         [Test]
