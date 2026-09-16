@@ -42,6 +42,8 @@ openupm add com.alvaris.clarity-console
 | v0.5.0 | Query language, channel chips, smart collapse, source preview, frame de-noising, pins, shortcuts, export, Problems tab, journal persistence, multiple windows |
 | v1.0.0 | Timeline strip, watch rules, log file import, session history, extension API, benchmarks |
 
+Ideas beyond that, ranked by usefulness in a game project, are listed in [Documentation~/feature-ideas.md](Documentation~/feature-ideas.md).
+
 ## Contributing
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) first. AI assistants follow [AGENTS.md](AGENTS.md). Design notes and decision records live in [Documentation~](Documentation~/index.md).
