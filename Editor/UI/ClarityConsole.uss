@@ -245,6 +245,17 @@
     margin: 1px 6px 6px 16px;
 }
 
+/* The hover card: a longer stretch of source floating over the pane while the pointer rests on a frame. */
+.cc-hover {
+    background-color: var(--cc-panel);
+    border-width: 1px;
+    border-color: var(--cc-accent);
+    border-radius: 4px;
+    padding-bottom: 2px;
+    max-width: 92%;
+    overflow: hidden;
+}
+
 .cc-src-header {
     font-size: 10px;
     color: var(--cc-text-dim);

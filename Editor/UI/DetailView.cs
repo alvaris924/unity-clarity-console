@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ClarityConsole.Core;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace ClarityConsole.UI
@@ -24,6 +25,10 @@ namespace ClarityConsole.UI
         private readonly Dictionary<TraceFrame, Label> _rows = new Dictionary<TraceFrame, Label>();
         private readonly List<SourcePreview> _inlinePreviews = new List<SourcePreview>();
         private bool _inlineSource;
+        private SourceHoverCard _hover;
+        private IVisualElementScheduledItem _hoverTimer;
+        private TraceFrame _hoverFrame;
+        private Vector2 _hoverAnchor;
         private readonly HashSet<int> _expanded = new HashSet<int>();
         private List<FrameGroup> _groups = new List<FrameGroup>();
         private LogEntry _entry;
@@ -45,14 +50,30 @@ namespace ClarityConsole.UI
 
             _preview = new SourcePreview();
             _preview.Activated += OpenSelectedFrame;
+            AttachHover(_preview, () => SelectedFrame);
             Add(_preview);
+
+            // A card that floats over the pane must not stay put while the pane scrolls under it.
+            verticalScroller.valueChanged += _ => EndHover();
         }
+
+        /// <summary>Milliseconds the pointer rests on a frame before the hover card appears.</summary>
+        public const long HoverDelayMs = 350;
 
         /// <summary>Raised when a frame should be opened in the code editor.</summary>
         public event Action<TraceFrame> FrameActivated;
 
         /// <summary>Asks for the source around a frame. Returning null hides the preview.</summary>
         public Func<TraceFrame, SourceSnippet> SnippetProvider { get; set; }
+
+        /// <summary>Reads a longer stretch around a frame for the hover card; null disables the card.</summary>
+        public Func<TraceFrame, SourceSnippet> HoverSnippetProvider { get; set; }
+
+        /// <summary>Where the hover card floats: an ancestor large enough for it, usually the window root.</summary>
+        public VisualElement HoverHost { get; set; }
+
+        /// <summary>The hover card, once one has been shown; for tests.</summary>
+        public SourceHoverCard HoverCard => _hover;
 
         /// <summary>Which frames count as infrastructure and are folded away. Null folds nothing.</summary>
         public FrameFilter FrameFilter { get; set; }
@@ -114,6 +135,7 @@ namespace ClarityConsole.UI
 
         public void Show(LogEntry entry)
         {
+            EndHover();
             _entry = entry;
             _entryFrame = null;
             _expanded.Clear();
@@ -262,7 +284,50 @@ namespace ClarityConsole.UI
             var block = new SourcePreview { Inline = true };
             block.Show(snippet, frame.FilePath);
             block.Activated += () => FrameActivated?.Invoke(frame);
+            AttachHover(block, () => frame);
             return block;
+        }
+
+        /// <summary>Shows the hover card for a frame after the pointer has rested on <paramref name="target"/>.</summary>
+        private void AttachHover(VisualElement target, Func<TraceFrame> frameOf)
+        {
+            target.RegisterCallback<MouseEnterEvent>(evt => BeginHover(frameOf(), evt.mousePosition));
+            target.RegisterCallback<MouseLeaveEvent>(_ => EndHover());
+            target.RegisterCallback<MouseDownEvent>(_ => EndHover());
+        }
+
+        private void BeginHover(TraceFrame frame, Vector2 panelPosition)
+        {
+            EndHover();
+            if (frame == null || !frame.HasLocation || HoverSnippetProvider == null || HoverHost == null)
+            {
+                return;
+            }
+
+            _hoverFrame = frame;
+            _hoverAnchor = panelPosition;
+            _hoverTimer = schedule.Execute(() => ShowHover(_hoverFrame, _hoverAnchor)).StartingIn(HoverDelayMs);
+        }
+
+        /// <summary>Shows the card for <paramref name="frame"/> at a panel position, at once.</summary>
+        internal void ShowHover(TraceFrame frame, Vector2 panelPosition)
+        {
+            SourceSnippet snippet = frame != null && frame.HasLocation ? HoverSnippetProvider?.Invoke(frame) : null;
+            if (snippet == null || HoverHost == null)
+            {
+                _hover?.Hide();
+                return;
+            }
+
+            _hover = _hover ?? new SourceHoverCard();
+            _hover.Show(HoverHost, snippet, frame.FilePath, HoverHost.WorldToLocal(panelPosition));
+        }
+
+        private void EndHover()
+        {
+            _hoverTimer?.Pause();
+            _hoverTimer = null;
+            _hover?.Hide();
         }
 
         private void OpenSelectedFrame()
@@ -292,7 +357,7 @@ namespace ClarityConsole.UI
             if (frame.HasLocation)
             {
                 label.AddToClassList(FrameLinkClass);
-                label.tooltip = "Click to preview, double-click to open " + frame.FilePath + " at line " + frame.Line + ".";
+                AttachHover(label, () => frame);
                 label.RegisterCallback<ClickEvent>(evt =>
                 {
                     if (evt.clickCount >= 2)
