@@ -53,6 +53,24 @@ namespace ClarityConsole.Tests.Settings
         }
 
         [Test]
+        public void Theme_RoundTrips_AndResetsToEmpty()
+        {
+            string original = ConsolePreferences.Theme;
+            try
+            {
+                ConsolePreferences.Theme = "scifi";
+                Assert.That(ConsolePreferences.Theme, Is.EqualTo("scifi"));
+
+                ConsolePreferences.ResetToDefaults();
+                Assert.That(ConsolePreferences.Theme, Is.Empty);
+            }
+            finally
+            {
+                ConsolePreferences.Theme = original;
+            }
+        }
+
+        [Test]
         public void Changed_FiresOnARealChange_AndOnReset()
         {
             ConsolePreferences.ResetToDefaults();

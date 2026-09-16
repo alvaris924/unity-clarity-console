@@ -40,6 +40,8 @@ namespace ClarityConsole.UI
         private ToolbarSearchField _searchField;
         private ChannelBar _channels;
         private TimelineStrip _timeline;
+        private StyleSheet _themeSheet;
+        private ConsoleTheme _theme;
         private DetailView _detail;
         private readonly SourceNavigator _navigator = new SourceNavigator();
         private readonly SourceCache _sources = new SourceCache();
@@ -130,12 +132,13 @@ namespace ClarityConsole.UI
 
             VisualElement root = rootVisualElement;
             root.AddToClassList("cc-root");
-            root.AddToClassList(EditorGUIUtility.isProSkin ? "cc-dark" : "cc-light");
             var styleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>(StyleSheetPath);
             if (styleSheet != null)
             {
                 root.styleSheets.Add(styleSheet);
             }
+
+            ApplyTheme(ConsoleThemes.Find(ConsolePreferences.Theme));
 
             root.Add(BuildToolbar());
 
@@ -164,6 +167,10 @@ namespace ClarityConsole.UI
             _status = new Label();
             _status.AddToClassList("cc-status");
             root.Add(_status);
+
+            var overlay = new VisualElement { pickingMode = PickingMode.Ignore };
+            overlay.AddToClassList("cc-overlay");
+            root.Add(overlay);
 
             _listScrollView = _list.Q<ScrollView>();
             if (_listScrollView != null)
@@ -218,6 +225,16 @@ namespace ClarityConsole.UI
             export.menu.AppendAction("Save as JSON…", _ => SaveVisible(ExportFormat.Json));
             export.menu.AppendSeparator();
             export.menu.AppendAction("Copy all shown", _ => CopyVisible());
+            export.menu.AppendSeparator();
+            foreach (ConsoleTheme theme in ConsoleThemes.All)
+            {
+                ConsoleTheme candidate = theme;
+                export.menu.AppendAction(
+                    "Theme/" + candidate.DisplayName,
+                    _ => ConsolePreferences.Theme = candidate.Id,
+                    _ => ReferenceEquals(_theme, candidate) ? DropdownMenuAction.Status.Checked : DropdownMenuAction.Status.Normal);
+            }
+
             toolbar.Add(export);
 
             toolbar.Add(new ToolbarSpacer { flex = true });
@@ -345,6 +362,7 @@ namespace ClarityConsole.UI
         {
             var label = new Label();
             label.AddToClassList("cc-cell");
+            label.AddToClassList("cc-mono");
             label.AddManipulator(new ContextualMenuManipulator(evt => BuildRowMenu(evt, label.userData as LogEntry)));
             return label;
         }
@@ -696,6 +714,40 @@ namespace ClarityConsole.UI
         private void OnPreferencesChanged()
         {
             _errorPauseToggle?.SetValueWithoutNotify(ConsolePreferences.ErrorPause);
+
+            ConsoleTheme wanted = ConsoleThemes.Find(ConsolePreferences.Theme);
+            if (!ReferenceEquals(wanted, _theme))
+            {
+                ApplyTheme(wanted);
+            }
+        }
+
+        /// <summary>The theme currently applied to this window.</summary>
+        public ConsoleTheme Theme => _theme;
+
+        /// <summary>Swaps the theme stylesheet and the root class that names it. Safe to call repeatedly.</summary>
+        private void ApplyTheme(ConsoleTheme theme)
+        {
+            VisualElement root = rootVisualElement;
+            if (_themeSheet != null && root.styleSheets.Contains(_themeSheet))
+            {
+                root.styleSheets.Remove(_themeSheet);
+            }
+
+            if (_theme != null)
+            {
+                root.RemoveFromClassList("cc-theme-" + _theme.Id);
+            }
+
+            _theme = theme;
+            _themeSheet = theme.Load();
+            if (_themeSheet != null)
+            {
+                root.styleSheets.Add(_themeSheet);
+            }
+
+            root.AddToClassList("cc-theme-" + theme.Id);
+            _timeline?.MarkDirtyRepaint();
         }
 
         private void OnSettingsChanged()

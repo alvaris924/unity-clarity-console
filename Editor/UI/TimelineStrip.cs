@@ -14,9 +14,14 @@ namespace ClarityConsole.UI
     {
         public const int DefaultBucketCount = 120;
 
-        private static readonly Color LogColor = new Color(0.55f, 0.75f, 1f, 0.85f);
-        private static readonly Color WarningColor = new Color(0.96f, 0.65f, 0.14f, 0.9f);
-        private static readonly Color ErrorColor = new Color(1f, 0.42f, 0.42f, 0.95f);
+        private static readonly CustomStyleProperty<Color> LogProperty = new CustomStyleProperty<Color>("--cc-timeline-log");
+        private static readonly CustomStyleProperty<Color> WarningProperty = new CustomStyleProperty<Color>("--cc-timeline-warning");
+        private static readonly CustomStyleProperty<Color> ErrorProperty = new CustomStyleProperty<Color>("--cc-timeline-error");
+
+        // Fallbacks for a strip that has no theme resolved yet, for instance in a test without a panel.
+        private Color _logColor = new Color(0.55f, 0.75f, 1f, 0.85f);
+        private Color _warningColor = new Color(0.96f, 0.65f, 0.14f, 0.9f);
+        private Color _errorColor = new Color(1f, 0.42f, 0.42f, 0.95f);
 
         private TimelineBucket[] _buckets = Array.Empty<TimelineBucket>();
         private int _peak;
@@ -28,6 +33,7 @@ namespace ClarityConsole.UI
         {
             AddToClassList("cc-timeline");
             generateVisualContent += OnGenerateVisualContent;
+            RegisterCallback<CustomStyleResolvedEvent>(OnCustomStyleResolved);
             RegisterCallback<PointerMoveEvent>(OnPointerMove);
             RegisterCallback<PointerLeaveEvent>(_ => SetHovered(-1));
             RegisterCallback<ClickEvent>(OnClick);
@@ -65,6 +71,27 @@ namespace ClarityConsole.UI
             return Math.Min(_buckets.Length - 1, (int)(x / width * _buckets.Length));
         }
 
+        /// <summary>Picks the bar colours up from the active theme's <c>--cc-timeline-*</c> variables.</summary>
+        private void OnCustomStyleResolved(CustomStyleResolvedEvent evt)
+        {
+            if (evt.customStyle.TryGetValue(LogProperty, out Color log))
+            {
+                _logColor = log;
+            }
+
+            if (evt.customStyle.TryGetValue(WarningProperty, out Color warning))
+            {
+                _warningColor = warning;
+            }
+
+            if (evt.customStyle.TryGetValue(ErrorProperty, out Color error))
+            {
+                _errorColor = error;
+            }
+
+            MarkDirtyRepaint();
+        }
+
         private void OnGenerateVisualContent(MeshGenerationContext context)
         {
             if (_peak == 0 || _buckets.Length == 0)
@@ -90,9 +117,9 @@ namespace ClarityConsole.UI
                 float unit = height / _peak;
                 float y = height;
 
-                y = DrawSegment(painter, x, y, bar, bucket.Logs * unit, LogColor, i == _hovered);
-                y = DrawSegment(painter, x, y, bar, bucket.Warnings * unit, WarningColor, i == _hovered);
-                DrawSegment(painter, x, y, bar, bucket.Errors * unit, ErrorColor, i == _hovered);
+                y = DrawSegment(painter, x, y, bar, bucket.Logs * unit, _logColor, i == _hovered);
+                y = DrawSegment(painter, x, y, bar, bucket.Warnings * unit, _warningColor, i == _hovered);
+                DrawSegment(painter, x, y, bar, bucket.Errors * unit, _errorColor, i == _hovered);
             }
         }
 

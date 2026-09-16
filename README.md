@@ -2,7 +2,7 @@
 
 Fast, searchable, dependency-free Console window for the Unity Editor.
 
-> **Status: pre-release.** Live log capture and the first window are in: a virtualized list with severity toggles, search, collapse, a detail pane with clickable stack frames that open your code editor, context-object ping, channel chips that group `[Tag]` messages, and a journal that keeps entries across domain reloads and Editor restarts. Device logs come next; follow the [milestones](https://github.com/alvaris924/unity-clarity-console/milestones).
+> **Status: pre-release.** Live log capture and the first window are in: a virtualized list with severity toggles, search, collapse, a detail pane with clickable stack frames that open your code editor, context-object ping, channel chips that group `[Tag]` messages, a journal that keeps entries across domain reloads and Editor restarts, and four themes. Device logs come next; follow the [milestones](https://github.com/alvaris924/unity-clarity-console/milestones).
 
 ## What it will do
 
@@ -12,6 +12,7 @@ Fast, searchable, dependency-free Console window for the Unity Editor.
 - Clickable stack frames with de-noising and an inline source preview of the failing line
 - Log history that survives domain reloads and Editor restarts
 - Compiler messages in a Problems tab, session markers, log file import
+- Themes: Native follows the Editor skin; Obsidian, Paper and Sci-fi are designed looks with a monospace face
 - Public Unity APIs only, UI Toolkit, zero third-party dependencies, MIT
 
 ## Requirements
@@ -46,4 +47,4 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) first. AI assistants follow [AGENTS.md](
 
 ## License
 
-[MIT](LICENSE.md)
+[MIT](LICENSE.md). The bundled JetBrains Mono font is under the SIL Open Font License 1.1; see [Third Party Notices.md](Third%20Party%20Notices.md).

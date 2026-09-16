@@ -43,6 +43,23 @@ namespace ClarityConsole.Settings
             set => Set(nameof(ClearOnBuild), value);
         }
 
+        /// <summary>Id of the console's look. Empty means the default theme.</summary>
+        public static string Theme
+        {
+            get => EditorPrefs.GetString(Prefix + nameof(Theme), string.Empty);
+            set
+            {
+                string id = value ?? string.Empty;
+                if (EditorPrefs.GetString(Prefix + nameof(Theme), string.Empty) == id)
+                {
+                    return;
+                }
+
+                EditorPrefs.SetString(Prefix + nameof(Theme), id);
+                Changed?.Invoke();
+            }
+        }
+
         /// <summary>Restores every preference to its default. Used by tests and the settings page.</summary>
         public static void ResetToDefaults()
         {
@@ -50,6 +67,7 @@ namespace ClarityConsole.Settings
             EditorPrefs.DeleteKey(Prefix + nameof(ClearOnPlay));
             EditorPrefs.DeleteKey(Prefix + nameof(ClearOnRecompile));
             EditorPrefs.DeleteKey(Prefix + nameof(ClearOnBuild));
+            EditorPrefs.DeleteKey(Prefix + nameof(Theme));
             Changed?.Invoke();
         }
 

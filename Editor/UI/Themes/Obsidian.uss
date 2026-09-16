@@ -1,0 +1,129 @@
+/*
+ * Obsidian: a designed dark theme. Warmer and higher-contrast than the Editor's default, with a
+ * monospace face for anything that is code.
+ */
+
+.cc-root {
+    --cc-bg: #16171b;
+    --cc-panel: #1c1e24;
+    --cc-row-alt: #202329;
+    --cc-text: #e6e8ee;
+    --cc-text-dim: #8b909c;
+    --cc-border: #2c3038;
+    --cc-accent: #7aa2f7;
+    --cc-accent-soft: rgba(122, 162, 247, 0.22);
+    --cc-hover: rgba(255, 255, 255, 0.05);
+    --cc-toolbar: #121317;
+    --cc-log: #9ecbff;
+    --cc-warning: #e0af68;
+    --cc-error: #f7768e;
+    --cc-marker: #6f7a8f;
+    --cc-link: #7dcfff;
+    --cc-link-hover: #b4e5ff;
+    --cc-timeline-bg: rgba(255, 255, 255, 0.04);
+    --cc-chip-bg: rgba(255, 255, 255, 0.05);
+}
+
+.cc-mono {
+    -unity-font-definition: url("../Fonts/JetBrainsMono-Regular.ttf");
+}
+
+.cc-mono.cc-frame-entry,
+.cc-mono.cc-src-hit,
+.cc-mono.cc-chip-selected {
+    -unity-font-definition: url("../Fonts/JetBrainsMono-Bold.ttf");
+}
+
+.unity-toolbar {
+    background-color: var(--cc-toolbar);
+    border-bottom-width: 1px;
+    border-bottom-color: var(--cc-border);
+}
+
+.unity-toolbar-button,
+.unity-toolbar-toggle,
+.unity-toolbar-menu {
+    background-color: transparent;
+    border-color: transparent;
+    color: var(--cc-text);
+}
+
+.unity-toolbar-button:hover,
+.unity-toolbar-toggle:hover,
+.unity-toolbar-menu:hover {
+    background-color: var(--cc-hover);
+}
+
+.unity-toolbar-toggle:checked {
+    background-color: var(--cc-accent-soft);
+    color: var(--cc-text);
+}
+
+.unity-toolbar-search-field {
+    background-color: var(--cc-panel);
+    border-color: var(--cc-border);
+    border-radius: 4px;
+}
+
+.unity-multi-column-header {
+    background-color: var(--cc-toolbar);
+    border-bottom-width: 1px;
+    border-bottom-color: var(--cc-border);
+}
+
+.unity-multi-column-header__column {
+    border-right-color: var(--cc-border);
+}
+
+.unity-multi-column-header__column__title {
+    color: var(--cc-text-dim);
+    font-size: 10px;
+    -unity-font-style: bold;
+}
+
+.unity-collection-view__item {
+    background-color: var(--cc-panel);
+}
+
+.unity-collection-view__item--alternative-background {
+    background-color: var(--cc-row-alt);
+}
+
+.unity-collection-view__item:hover {
+    background-color: var(--cc-hover);
+}
+
+.unity-collection-view__item--selected,
+.unity-list-view__item--selected {
+    background-color: var(--cc-accent-soft);
+}
+
+.unity-scroller {
+    background-color: var(--cc-bg);
+}
+
+.unity-base-slider__tracker {
+    background-color: transparent;
+    border-color: transparent;
+}
+
+.unity-base-slider__dragger {
+    background-color: #3a3f4b;
+    border-color: transparent;
+    border-radius: 4px;
+}
+
+.unity-base-slider__dragger:hover {
+    background-color: #4a5060;
+}
+
+.unity-text-field__input,
+.unity-base-text-field__input {
+    background-color: var(--cc-panel);
+    border-color: var(--cc-border);
+    color: var(--cc-text);
+}
+
+.unity-two-pane-split-view__dragline-anchor {
+    background-color: var(--cc-border);
+}
