@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ### Added
 
+- Timeline strip: a thin bar chart above the list shows how many entries landed in each slice of the visible time span, stacked by severity, so a burst of errors stands out at a glance. Clicking a bar jumps the list to that moment and pauses auto-scroll. The strip follows every filter, so it charts what the list shows.
 - Log file import: drop a `Player.log`, an Editor log or an Android `logcat` dump on the console, or pick one from the File menu, and it opens in its own read-only window. Unity logs keep their stack traces and call sites as clickable frames; logcat lines keep their level and turn their tag into a channel. The toolbar's Export menu is now File, holding the import action alongside saving and copying.
 - Error Pause and clear-on options: a toolbar toggle pauses Play mode as soon as an error, exception or assertion is logged, and a dropdown next to Clear empties the console when entering Play mode, when a recompile starts or when a player build starts. All four are per-user preferences rather than project settings, since they are a personal habit.
 - Export: the toolbar's Export menu writes the rows currently shown to a text, Markdown or JSON file, or copies them to the clipboard, and every export carries a header naming the Unity version, the package version, the session and the filters that were active. The row context menu gains "Copy for a bug report", which copies one entry with its stack and that same header.
