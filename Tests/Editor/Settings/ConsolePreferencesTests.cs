@@ -9,6 +9,9 @@ namespace ClarityConsole.Tests.Settings
         private bool _clearOnPlay;
         private bool _clearOnRecompile;
         private bool _clearOnBuild;
+        private bool _wrapMessages;
+        private bool _showTime;
+        private bool _showFrame;
 
         [SetUp]
         public void SetUp()
@@ -17,6 +20,9 @@ namespace ClarityConsole.Tests.Settings
             _clearOnPlay = ConsolePreferences.ClearOnPlay;
             _clearOnRecompile = ConsolePreferences.ClearOnRecompile;
             _clearOnBuild = ConsolePreferences.ClearOnBuild;
+            _wrapMessages = ConsolePreferences.WrapMessages;
+            _showTime = ConsolePreferences.ShowTime;
+            _showFrame = ConsolePreferences.ShowFrame;
         }
 
         [TearDown]
@@ -26,6 +32,9 @@ namespace ClarityConsole.Tests.Settings
             ConsolePreferences.ClearOnPlay = _clearOnPlay;
             ConsolePreferences.ClearOnRecompile = _clearOnRecompile;
             ConsolePreferences.ClearOnBuild = _clearOnBuild;
+            ConsolePreferences.WrapMessages = _wrapMessages;
+            ConsolePreferences.ShowTime = _showTime;
+            ConsolePreferences.ShowFrame = _showFrame;
         }
 
         [Test]
@@ -50,6 +59,35 @@ namespace ClarityConsole.Tests.Settings
             Assert.That(ConsolePreferences.ClearOnPlay, Is.False);
             Assert.That(ConsolePreferences.ClearOnRecompile, Is.False);
             Assert.That(ConsolePreferences.ClearOnBuild, Is.False);
+        }
+
+        [Test]
+        public void WrapMessages_IsOffByDefault_RoundTrips_AndResets()
+        {
+            ConsolePreferences.ResetToDefaults();
+            Assert.That(ConsolePreferences.WrapMessages, Is.False);
+
+            ConsolePreferences.WrapMessages = true;
+            Assert.That(ConsolePreferences.WrapMessages, Is.True);
+            Assert.That(ConsolePreferences.ClearOnPlay, Is.False, "wrap must not touch the other switches");
+
+            ConsolePreferences.ResetToDefaults();
+            Assert.That(ConsolePreferences.WrapMessages, Is.False);
+        }
+
+        [Test]
+        public void TimeAndFrameColumns_AreOffByDefault_AndRoundTripIndependently()
+        {
+            ConsolePreferences.ResetToDefaults();
+            Assert.That(ConsolePreferences.ShowTime, Is.False);
+            Assert.That(ConsolePreferences.ShowFrame, Is.False);
+
+            ConsolePreferences.ShowFrame = true;
+            Assert.That(ConsolePreferences.ShowFrame, Is.True);
+            Assert.That(ConsolePreferences.ShowTime, Is.False);
+
+            ConsolePreferences.ResetToDefaults();
+            Assert.That(ConsolePreferences.ShowFrame, Is.False);
         }
 
         [Test]
