@@ -76,6 +76,27 @@ namespace ClarityConsole.Tests.Settings
         }
 
         [Test]
+        public void InlineSource_IsOnByDefault_AndRoundTrips()
+        {
+            bool original = ConsolePreferences.InlineSource;
+            try
+            {
+                ConsolePreferences.ResetToDefaults();
+                Assert.That(ConsolePreferences.InlineSource, Is.True);
+
+                ConsolePreferences.InlineSource = false;
+                Assert.That(ConsolePreferences.InlineSource, Is.False);
+
+                ConsolePreferences.ResetToDefaults();
+                Assert.That(ConsolePreferences.InlineSource, Is.True);
+            }
+            finally
+            {
+                ConsolePreferences.InlineSource = original;
+            }
+        }
+
+        [Test]
         public void TimeAndFrameColumns_AreOffByDefault_AndRoundTripIndependently()
         {
             ConsolePreferences.ResetToDefaults();

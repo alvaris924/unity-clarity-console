@@ -13,6 +13,7 @@ namespace ClarityConsole.UI
         public const string LineClass = "cc-src-line";
         public const string HighlightClass = "cc-src-hit";
         public const string HeaderClass = "cc-src-header";
+        public const string InlineClass = "cc-src-inline";
 
         private readonly Label _header;
         private readonly VisualElement _lines;
@@ -43,6 +44,20 @@ namespace ClarityConsole.UI
 
         /// <summary>Line numbers currently drawn, for tests.</summary>
         public int LineCount => _lines.childCount;
+
+        /// <summary>
+        /// Draws the preview as a block under a frame row: no path header, since the row already names the
+        /// file and line, and a tighter margin.
+        /// </summary>
+        public bool Inline
+        {
+            get => ClassListContains(InlineClass);
+            set
+            {
+                EnableInClassList(InlineClass, value);
+                _header.style.display = value ? DisplayStyle.None : DisplayStyle.Flex;
+            }
+        }
 
         public void Show(SourceSnippet snippet, string displayPath)
         {

@@ -23,7 +23,7 @@ namespace ClarityConsole.UI
             return new SettingsProvider(Path, SettingsScope.User)
             {
                 label = "Clarity Console",
-                keywords = new HashSet<string> { "console", "log", "theme", "wrap", "column", "clarity" },
+                keywords = new HashSet<string> { "console", "log", "theme", "wrap", "column", "source", "stack", "clarity" },
                 activateHandler = (_, root) => unsubscribe = Build(root),
                 deactivateHandler = () =>
                 {
@@ -53,6 +53,8 @@ namespace ClarityConsole.UI
             root.Add(theme);
 
             AddToggle(root, refreshers, "wrap", "Wrap long messages", () => ConsolePreferences.WrapMessages, v => ConsolePreferences.WrapMessages = v);
+            AddToggle(root, refreshers, "inline-source", "Source under every frame", () => ConsolePreferences.InlineSource, v => ConsolePreferences.InlineSource = v);
+            AddHelp(root, "On, the detail pane shows a few lines of code under each stack frame in order, so the path an error took reads top to bottom. Off, one preview follows the frame you click.");
 
             AddTitle(root, "Columns", 12);
             AddHelp(root, "Time and Frame are off by default so a narrow panel is mostly message. Right-clicking the list header toggles them as well.");

@@ -22,6 +22,8 @@ namespace ClarityConsole.UI
         private readonly VisualElement _frames;
         private readonly SourcePreview _preview;
         private readonly Dictionary<TraceFrame, Label> _rows = new Dictionary<TraceFrame, Label>();
+        private readonly List<SourcePreview> _inlinePreviews = new List<SourcePreview>();
+        private bool _inlineSource;
         private readonly HashSet<int> _expanded = new HashSet<int>();
         private List<FrameGroup> _groups = new List<FrameGroup>();
         private LogEntry _entry;
@@ -61,6 +63,32 @@ namespace ClarityConsole.UI
         /// <summary>The entry on display, or null when the pane is empty.</summary>
         public LogEntry Entry => _entry;
 
+        /// <summary>
+        /// Show the source under every frame that has one, in stack order, so the path an error took
+        /// reads top to bottom without clicking through the frames. Off, a single preview follows the
+        /// selected frame instead.
+        /// </summary>
+        public bool InlineSource
+        {
+            get => _inlineSource;
+            set
+            {
+                if (_inlineSource == value)
+                {
+                    return;
+                }
+
+                _inlineSource = value;
+                if (_entry != null)
+                {
+                    Show(_entry);
+                }
+            }
+        }
+
+        /// <summary>Source blocks currently drawn under frames, for tests.</summary>
+        public int InlinePreviewCount => _inlinePreviews.Count;
+
         /// <summary>Rows currently drawn, folded runs included.</summary>
         public int FrameRowCount => _frames.childCount;
 
@@ -98,6 +126,7 @@ namespace ClarityConsole.UI
                 _message.SetValueWithoutNotify(string.Empty);
                 _frames.Clear();
                 _rows.Clear();
+                _inlinePreviews.Clear();
                 return;
             }
 
@@ -126,6 +155,13 @@ namespace ClarityConsole.UI
             if (_rows.TryGetValue(frame, out Label row))
             {
                 row.AddToClassList(FrameSelectedClass);
+            }
+
+            if (_inlineSource)
+            {
+                // Every frame already carries its source; the trailing preview stays out of the way.
+                _preview.Hide();
+                return;
             }
 
             SourceSnippet snippet = frame.HasLocation && SnippetProvider != null ? SnippetProvider(frame) : null;
@@ -184,6 +220,7 @@ namespace ClarityConsole.UI
         {
             _frames.Clear();
             _rows.Clear();
+            _inlinePreviews.Clear();
 
             for (int i = 0; i < _groups.Count; i++)
             {
@@ -199,8 +236,33 @@ namespace ClarityConsole.UI
                     Label row = BuildRow(frame, ReferenceEquals(frame, _entryFrame));
                     _rows[frame] = row;
                     _frames.Add(row);
+
+                    if (_inlineSource && frame.HasLocation)
+                    {
+                        SourcePreview block = BuildInlinePreview(frame);
+                        if (block != null)
+                        {
+                            _inlinePreviews.Add(block);
+                            _frames.Add(block);
+                        }
+                    }
                 }
             }
+        }
+
+        /// <summary>A source block for one frame, or null when its file cannot be read.</summary>
+        private SourcePreview BuildInlinePreview(TraceFrame frame)
+        {
+            SourceSnippet snippet = SnippetProvider?.Invoke(frame);
+            if (snippet == null)
+            {
+                return null;
+            }
+
+            var block = new SourcePreview { Inline = true };
+            block.Show(snippet, frame.FilePath);
+            block.Activated += () => FrameActivated?.Invoke(frame);
+            return block;
         }
 
         private void OpenSelectedFrame()

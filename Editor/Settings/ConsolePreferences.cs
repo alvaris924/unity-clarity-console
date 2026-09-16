@@ -57,6 +57,16 @@ namespace ClarityConsole.Settings
             set => Set(nameof(ShowFrame), value);
         }
 
+        /// <summary>
+        /// Show the source under every stack frame that has one, so the path an error took reads top to
+        /// bottom. Off, one preview follows the selected frame.
+        /// </summary>
+        public static bool InlineSource
+        {
+            get => Get(nameof(InlineSource), true);
+            set => Set(nameof(InlineSource), value);
+        }
+
         /// <summary>Wrap long messages in the list so rows grow instead of cutting the text off.</summary>
         public static bool WrapMessages
         {
@@ -90,6 +100,7 @@ namespace ClarityConsole.Settings
             EditorPrefs.DeleteKey(Prefix + nameof(ClearOnBuild));
             EditorPrefs.DeleteKey(Prefix + nameof(ShowTime));
             EditorPrefs.DeleteKey(Prefix + nameof(ShowFrame));
+            EditorPrefs.DeleteKey(Prefix + nameof(InlineSource));
             EditorPrefs.DeleteKey(Prefix + nameof(WrapMessages));
             EditorPrefs.DeleteKey(Prefix + nameof(Theme));
             Changed?.Invoke();
