@@ -158,7 +158,7 @@ namespace ClarityConsole.UI
             _list = BuildList();
             ApplyWrap(ConsolePreferences.WrapMessages);
             split.Add(_list);
-            _detail = new DetailView();
+            _detail = new DetailView { InlineSource = ConsolePreferences.InlineSource };
             _detail.FrameActivated += OpenFrame;
             _detail.SnippetProvider = TryGetSnippet;
             _detail.FrameFilter = ClarityConsoleSettings.instance.CreateFrameFilter();
@@ -246,6 +246,7 @@ namespace ClarityConsole.UI
 
             AppendPreferenceToggle(export, "Columns/Time", () => ConsolePreferences.ShowTime, v => ConsolePreferences.ShowTime = v);
             AppendPreferenceToggle(export, "Columns/Frame", () => ConsolePreferences.ShowFrame, v => ConsolePreferences.ShowFrame = v);
+            AppendPreferenceToggle(export, "Source under every frame", () => ConsolePreferences.InlineSource, v => ConsolePreferences.InlineSource = v);
             export.menu.AppendSeparator();
             export.menu.AppendAction("Preferences…", _ => SettingsService.OpenUserPreferences(ClarityConsolePreferencesProvider.Path));
 
@@ -755,6 +756,11 @@ namespace ClarityConsole.UI
             {
                 _timeColumn.visible = ConsolePreferences.ShowTime;
                 _frameColumn.visible = ConsolePreferences.ShowFrame;
+            }
+
+            if (_detail != null)
+            {
+                _detail.InlineSource = ConsolePreferences.InlineSource;
             }
 
             ConsoleTheme wanted = ConsoleThemes.Find(ConsolePreferences.Theme);

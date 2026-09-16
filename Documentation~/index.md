@@ -56,6 +56,10 @@ File > Theme in the toolbar switches the window's look. Native, the default, tak
 
 A theme is one USS file in `Editor/UI/Themes` that assigns the `--cc-*` variables `ClarityConsole.uss` reads (background, panel, text, accent, severity colours and so on) and may restyle the built-in controls the window uses. To add one, drop a sheet in that folder, register it in `ConsoleThemes`, and it appears in the menu.
 
+## Reading a stack trace
+
+Selecting an entry lists its stack frames with the infrastructure runs folded, and under every frame that has a file and line, a few lines of that file with the frame's line highlighted, in stack order, so the path the error took reads top to bottom without clicking through the frames. The number of lines on each side is the source preview length in Project Settings; a frame whose file cannot be read gets no block. Double-clicking a frame or its block opens the file in the code editor. Prefer one preview that follows the frame you click? Turn off "Source under every frame" in the File menu or on the Preferences page.
+
 ## Reading in a narrow panel
 
 The Wrap toggle in the toolbar wraps long messages instead of cutting them off, and rows grow to fit, up to about six lines; the full text is always in the detail pane. The severity icon, time and frame stay aligned with the first line, and stack frames wrap as well. Wrap is a per-user preference, off by default, because fixed-height rows are cheaper and most messages fit on one line in a wide window. When the window is too narrow for the toolbar, the search field and the severity toggles move to a second line together rather than being clipped on the right.
@@ -64,7 +68,7 @@ The Time and Frame columns are off by default for the same reason: in a docked p
 
 ## Preferences
 
-Edit > Preferences > Clarity Console gathers the per-user switches in one place: the theme, wrap, the Time and Frame columns, Error Pause and the clear-on options, with a reset to defaults. The same switches are reachable from the toolbar and the File menu; the page follows changes made there. Preferences live in `EditorPrefs` and are never committed with the project, unlike Project Settings > Clarity Console, which holds what a team shares.
+Edit > Preferences > Clarity Console gathers the per-user switches in one place: the theme, wrap, source under every frame, the Time and Frame columns, Error Pause and the clear-on options, with a reset to defaults. The same switches are reachable from the toolbar and the File menu; the page follows changes made there. Preferences live in `EditorPrefs` and are never committed with the project, unlike Project Settings > Clarity Console, which holds what a team shares.
 
 ## Clearing and pausing
 
@@ -93,7 +97,7 @@ Right-click a row to silence that exact message or its whole channel. Rules are 
 | Captured entries | `Library/ClarityConsole/journal-*.bin`, segmented, 32 MB budget by default | Domain reload, Play mode, Editor restart, Editor crash up to the last drain |
 | Play session counter | `SessionState` | Domain reload; continues from the journal after a restart |
 | Project settings | `ProjectSettings/ClarityConsole.asset` | Everything; commit it with the project |
-| Preferences (theme, wrap, clear-on, Error Pause) | `EditorPrefs` | Everything; per user, not shared |
+| Preferences (theme, wrap, source blocks, columns, clear-on, Error Pause) | `EditorPrefs` | Everything; per user, not shared |
 
 Clear in the window deletes the journal. Deleting the folder while the Editor is closed has the same effect.
 

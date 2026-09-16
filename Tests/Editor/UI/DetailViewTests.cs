@@ -177,6 +177,76 @@ namespace ClarityConsole.Tests.UI
             Assert.That(DetailView.SummariseHidden(one), Is.EqualTo("1 frame hidden (UnityEngine)"));
         }
 
+        [Test]
+        public void InlineSource_DrawsASnippetUnderEveryLocatedFrame_AndKeepsTheTrailingPreviewHidden()
+        {
+            var asked = new List<TraceFrame>();
+            var view = new DetailView
+            {
+                InlineSource = true,
+                FrameFilter = new FrameFilter(hideEngineFrames: true, null),
+                SnippetProvider = frame =>
+                {
+                    asked.Add(frame);
+                    return new SourceSnippet(frame.FilePath, frame.Line - 1, new[] { "a", "b", "c" }, 1);
+                },
+            };
+
+            view.Show(Entry("boom", Trace(
+                "UnityEngine.Debug:LogError (object)",
+                "Game.Foo:Bar () (at Assets/Game/Foo.cs:20)",
+                "Game.Boss:Update () (at Assets/Game/Boss.cs:88)",
+                "Game.Loop:Tick ()")));
+
+            Assert.That(view.InlinePreviewCount, Is.EqualTo(2), "one block per frame that has a location");
+            Assert.That(asked.Select(f => f.Line), Is.EqualTo(new[] { 20, 88 }), "stack order, engine frame folded, frame without a location skipped");
+            Assert.That(view.IsPreviewVisible, Is.False, "the trailing preview would repeat the entry frame's block");
+            Assert.That(view.SelectedFrame, Is.Not.Null.And.Property("Line").EqualTo(20), "the entry frame is still the selected row");
+            Assert.That(view.Query<Label>(className: SourcePreview.HighlightClass).ToList().Count, Is.EqualTo(2));
+            List<VisualElement> blocks = view.Query(className: SourcePreview.InlineClass).ToList();
+            Assert.That(blocks.Count, Is.EqualTo(2));
+            Assert.That(blocks.All(b => b.Q<Label>(className: SourcePreview.HeaderClass).style.display == DisplayStyle.None), Is.True, "inline blocks show no path header; the frame row names the file");
+        }
+
+        [Test]
+        public void InlineSource_SkipsFramesWhoseFileCannotBeRead()
+        {
+            var view = new DetailView
+            {
+                InlineSource = true,
+                SnippetProvider = frame => frame.Line == 20 ? new SourceSnippet(frame.FilePath, 19, new[] { "a" }, 0) : null,
+            };
+
+            view.Show(Entry("boom", Trace("Game.Foo:Bar () (at Assets/Game/Foo.cs:20)", "Game.Gone:Away () (at Assets/Game/Gone.cs:5)")));
+
+            Assert.That(view.InlinePreviewCount, Is.EqualTo(1));
+            Assert.That(view.FrameRowCount, Is.EqualTo(3), "two frame rows plus one source block");
+        }
+
+        [Test]
+        public void InlineSource_Toggle_ReRendersTheEntry_AndShowNullClearsTheBlocks()
+        {
+            var view = new DetailView
+            {
+                InlineSource = true,
+                SnippetProvider = frame => new SourceSnippet(frame.FilePath, frame.Line - 1, new[] { "a", "b" }, 1),
+            };
+            view.Show(Entry("boom", Trace("Game.Foo:Bar () (at Assets/Game/Foo.cs:20)")));
+            Assert.That(view.InlinePreviewCount, Is.EqualTo(1));
+
+            view.InlineSource = false;
+            Assert.That(view.InlinePreviewCount, Is.EqualTo(0));
+            Assert.That(view.IsPreviewVisible, Is.True, "back to one preview under the selected frame");
+
+            view.InlineSource = true;
+            Assert.That(view.InlinePreviewCount, Is.EqualTo(1));
+            Assert.That(view.IsPreviewVisible, Is.False);
+
+            view.Show(null);
+            Assert.That(view.InlinePreviewCount, Is.EqualTo(0));
+            Assert.That(view.Query<Label>(className: SourcePreview.HighlightClass).ToList(), Is.Empty);
+        }
+
         private static string Trace(params string[] frames)
         {
             return string.Join(Environment.NewLine, frames);

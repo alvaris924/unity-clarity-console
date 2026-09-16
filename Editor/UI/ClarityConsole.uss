@@ -241,6 +241,10 @@
     background-color: var(--cc-bg);
 }
 
+.cc-src-inline {
+    margin: 1px 6px 6px 16px;
+}
+
 .cc-src-header {
     font-size: 10px;
     color: var(--cc-text-dim);

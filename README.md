@@ -9,7 +9,7 @@ Fast, searchable, dependency-free Console window for the Unity Editor.
 - A virtualized log list that stays smooth at 100k entries
 - A small query language: `sev:error tag:Net* -"retry scheduled" /timeout \d+ms/i`
 - Channel chips derived from `[Tag]` prefixes, smart collapse, pins, unread badge
-- Clickable stack frames with de-noising and an inline source preview of the failing line
+- Clickable stack frames with de-noising and the source shown under every frame, so an error's path reads top to bottom
 - Log history that survives domain reloads and Editor restarts
 - Compiler messages in a Problems tab, session markers, log file import
 - Themes: Native follows the Editor skin; Obsidian, Paper and Sci-fi are designed looks with a monospace face

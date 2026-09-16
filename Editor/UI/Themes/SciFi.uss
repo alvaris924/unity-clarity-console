@@ -183,6 +183,15 @@
     margin: 6px 10px 10px 10px;
 }
 
+.cc-src-inline {
+    background-image: none;
+    background-color: var(--cc-panel);
+    border-left-width: 2px;
+    border-left-color: rgba(34, 211, 238, 0.35);
+    padding: 4px 8px 4px 8px;
+    margin: 1px 10px 8px 18px;
+}
+
 .cc-src-header {
     color: var(--cc-accent);
     letter-spacing: 1px;
