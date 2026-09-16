@@ -46,6 +46,23 @@ namespace ClarityConsole.Tests.UI
         }
 
         [Test]
+        public void Show_Null_HidesThePreview_AndForgetsTheEntry()
+        {
+            var view = new DetailView();
+            view.SnippetProvider = _ => new SourceSnippet("Assets/Game/Foo.cs", 19, new[] { "a", "b", "c" }, 1);
+            view.Show(Entry("boom", Trace("Game.Foo:Bar () (at Assets/Game/Foo.cs:20)")));
+            Assert.That(view.IsPreviewVisible, Is.True, "precondition: a located frame previews its source");
+            Assert.That(view.Entry, Is.Not.Null);
+
+            view.Show(null);
+
+            Assert.That(view.Entry, Is.Null);
+            Assert.That(view.SelectedFrame, Is.Null);
+            Assert.That(view.IsPreviewVisible, Is.False, "the highlighted source line must go with the entry");
+            Assert.That(view.Query<Label>(className: SourcePreview.HighlightClass).ToList(), Is.Empty);
+        }
+
+        [Test]
         public void Show_Marker_HasNoRows()
         {
             var view = new DetailView();

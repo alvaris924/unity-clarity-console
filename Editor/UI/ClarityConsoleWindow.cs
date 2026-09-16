@@ -861,6 +861,7 @@ namespace ClarityConsole.UI
 
             _viewModel.Flush();
             _list.Rebuild();
+            SyncDetailWithList();
             _timeline?.Refresh(_viewModel.Visible);
             if (_stickToBottom && _viewModel.Visible.Count > 0)
             {
@@ -868,6 +869,32 @@ namespace ClarityConsole.UI
             }
 
             UpdateStatus();
+        }
+
+        /// <summary>
+        /// Keeps the detail pane honest after the rows change under it. Rebuilding the list does not
+        /// raise a selection event, so after Clear, a filter or a collapse the pane would go on showing
+        /// an entry that is no longer on screen. The entry follows its row when it moved, and the pane
+        /// empties, preview and all, when the entry is gone.
+        /// </summary>
+        private void SyncDetailWithList()
+        {
+            LogEntry shown = _detail.Entry;
+            if (shown == null)
+            {
+                return;
+            }
+
+            int index = _viewModel.Visible.IndexOf(shown);
+            if (index < 0)
+            {
+                _list.ClearSelection();
+                _detail.Show(null);
+            }
+            else if (_list.selectedIndex != index)
+            {
+                _list.SetSelectionWithoutNotify(new[] { index });
+            }
         }
 
         private void ScheduleSearch()

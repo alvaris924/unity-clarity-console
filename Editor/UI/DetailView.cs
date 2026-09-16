@@ -58,6 +58,9 @@ namespace ClarityConsole.UI
         /// <summary>The frame the preview is showing, or null.</summary>
         public TraceFrame SelectedFrame { get; private set; }
 
+        /// <summary>The entry on display, or null when the pane is empty.</summary>
+        public LogEntry Entry => _entry;
+
         /// <summary>Rows currently drawn, folded runs included.</summary>
         public int FrameRowCount => _frames.childCount;
 
