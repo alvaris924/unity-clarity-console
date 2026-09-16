@@ -87,6 +87,15 @@ namespace ClarityConsole.Settings
             radius.RegisterValueChangedCallback(evt => ClarityConsoleSettings.instance.SourcePreviewRadius = evt.newValue);
             root.Add(radius);
 
+            var hoverRadius = new SliderInt("Hover card lines", ClarityConsoleSettings.MinSourcePreviewRadius, ClarityConsoleSettings.MaxSourceHoverRadius)
+            {
+                value = ClarityConsoleSettings.instance.SourceHoverRadius,
+                showInputField = true,
+            };
+            hoverRadius.tooltip = "Lines of source shown on each side of the frame's line in the card that appears while the pointer rests on a frame or its source block.";
+            hoverRadius.RegisterValueChangedCallback(evt => ClarityConsoleSettings.instance.SourceHoverRadius = evt.newValue);
+            root.Add(hoverRadius);
+
             var hideEngine = new Toggle("Fold engine frames")
             {
                 value = ClarityConsoleSettings.instance.HideEngineFrames,
@@ -124,6 +133,7 @@ namespace ClarityConsole.Settings
                 field.SetValueWithoutNotify(ClarityConsoleSettings.instance.ChannelPattern);
                 watch.SetValueWithoutNotify(ClarityConsoleSettings.instance.WatchPattern);
                 radius.SetValueWithoutNotify(ClarityConsoleSettings.instance.SourcePreviewRadius);
+                hoverRadius.SetValueWithoutNotify(ClarityConsoleSettings.instance.SourceHoverRadius);
                 hideEngine.SetValueWithoutNotify(ClarityConsoleSettings.instance.HideEngineFrames);
                 prefixes.SetValueWithoutNotify(ClarityConsoleSettings.instance.HiddenFramePrefixes);
                 UpdateStatus(status, field.value);

@@ -32,6 +32,9 @@ namespace ClarityConsole.Settings
         private int _sourcePreviewRadius = SourceCache.DefaultRadius;
 
         [SerializeField]
+        private int _sourceHoverRadius = DefaultSourceHoverRadius;
+
+        [SerializeField]
         private bool _hideEngineFrames = true;
 
         [SerializeField]
@@ -42,6 +45,8 @@ namespace ClarityConsole.Settings
 
         public const int MinSourcePreviewRadius = 0;
         public const int MaxSourcePreviewRadius = 20;
+        public const int DefaultSourceHoverRadius = 7;
+        public const int MaxSourceHoverRadius = 40;
 
         /// <summary>Raised after any setting changes, on the main thread.</summary>
         public static event Action Changed;
@@ -59,6 +64,26 @@ namespace ClarityConsole.Settings
                 }
 
                 _channelPattern = pattern;
+                Persist();
+            }
+        }
+
+        /// <summary>
+        /// How many source lines the hover card shows on each side of a frame's line. Larger than the
+        /// inline preview, since the card is asked for on purpose and goes away on its own.
+        /// </summary>
+        public int SourceHoverRadius
+        {
+            get => Mathf.Clamp(_sourceHoverRadius, MinSourcePreviewRadius, MaxSourceHoverRadius);
+            set
+            {
+                int clamped = Mathf.Clamp(value, MinSourcePreviewRadius, MaxSourceHoverRadius);
+                if (_sourceHoverRadius == clamped)
+                {
+                    return;
+                }
+
+                _sourceHoverRadius = clamped;
                 Persist();
             }
         }
@@ -220,6 +245,7 @@ namespace ClarityConsole.Settings
             _channelPattern = ChannelExtractor.DefaultPattern;
             _watchPattern = WatchExtractor.DefaultPattern;
             _sourcePreviewRadius = SourceCache.DefaultRadius;
+            _sourceHoverRadius = DefaultSourceHoverRadius;
             _hideEngineFrames = true;
             _hiddenFramePrefixes = string.Empty;
             _ignoreRules.Clear();

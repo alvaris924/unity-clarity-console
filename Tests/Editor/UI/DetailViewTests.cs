@@ -4,6 +4,7 @@ using System.Linq;
 using ClarityConsole.Core;
 using ClarityConsole.UI;
 using NUnit.Framework;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace ClarityConsole.Tests.UI
@@ -245,6 +246,53 @@ namespace ClarityConsole.Tests.UI
             view.Show(null);
             Assert.That(view.InlinePreviewCount, Is.EqualTo(0));
             Assert.That(view.Query<Label>(className: SourcePreview.HighlightClass).ToList(), Is.Empty);
+        }
+
+        [Test]
+        public void ShowHover_FloatsALongerSnippetInTheHost_AndShowingAnEntryHidesIt()
+        {
+            var host = new VisualElement();
+            var asked = new List<TraceFrame>();
+            var view = new DetailView
+            {
+                HoverHost = host,
+                SnippetProvider = frame => new SourceSnippet(frame.FilePath, frame.Line - 1, new[] { "a", "b", "c" }, 1),
+                HoverSnippetProvider = frame =>
+                {
+                    asked.Add(frame);
+                    return new SourceSnippet(frame.FilePath, frame.Line - 7, Enumerable.Range(0, 15).Select(i => "line " + i).ToArray(), 7);
+                },
+            };
+            host.Add(view);
+            var entry = Entry("boom", Trace("Game.Foo:Bar () (at Assets/Game/Foo.cs:20)"));
+            view.Show(entry);
+
+            view.ShowHover(entry.Trace.Frames[0], new Vector2(30, 30));
+
+            Assert.That(view.HoverCard, Is.Not.Null);
+            Assert.That(view.HoverCard.IsShown, Is.True);
+            Assert.That(view.HoverCard.parent, Is.SameAs(host), "the card floats in the host, not inside the scrolling pane");
+            Assert.That(view.HoverCard.LineCount, Is.EqualTo(15), "the hover card shows the longer stretch");
+            Assert.That(asked.Single().Line, Is.EqualTo(20));
+
+            view.Show(null);
+            Assert.That(view.HoverCard.IsShown, Is.False, "a new entry, or none, takes the card with it");
+        }
+
+        [Test]
+        public void ShowHover_DoesNothingWithoutAProviderOrForAFrameWithoutALocation()
+        {
+            var host = new VisualElement();
+            var view = new DetailView { HoverHost = host };
+            var entry = Entry("boom", Trace("Game.Foo:Bar () (at Assets/Game/Foo.cs:20)", "Game.Loop:Tick ()"));
+            view.Show(entry);
+
+            view.ShowHover(entry.Trace.Frames[0], Vector2.zero);
+            Assert.That(view.HoverCard, Is.Null, "no provider, no card");
+
+            view.HoverSnippetProvider = frame => new SourceSnippet(frame.FilePath, 1, new[] { "x" }, 0);
+            view.ShowHover(entry.Trace.Frames[1], Vector2.zero);
+            Assert.That(view.HoverCard, Is.Null, "a frame without a location has nothing to show");
         }
 
         private static string Trace(params string[] frames)

@@ -48,7 +48,7 @@ Session markers always show, whatever the query, so the stream keeps its shape. 
 
 ## Settings
 
-Project Settings > Clarity Console holds the settings a team shares through version control. Frame folding lives there: whether to fold engine frames, and which type-name prefixes of your own to fold, one per line, such as a logging wrapper or an async library. The source preview length lives there too: how many lines to show on each side of the line a stack frame points at, zero for just that line. The channel pattern is a regular expression whose first group names the channel of a message, `^\[([\w.\- ]{1,64})\]` by default, so `[PlayFabCBSManager] ...` belongs to channel `PlayFabCBSManager`. Changing it re-channels the entries already captured.
+Project Settings > Clarity Console holds the settings a team shares through version control. Frame folding lives there: whether to fold engine frames, and which type-name prefixes of your own to fold, one per line, such as a logging wrapper or an async library. The source preview length lives there too: how many lines to show on each side of the line a stack frame points at, zero for just that line, and the hover card length, the same number for the card that appears while the pointer rests on a frame. The channel pattern is a regular expression whose first group names the channel of a message, `^\[([\w.\- ]{1,64})\]` by default, so `[PlayFabCBSManager] ...` belongs to channel `PlayFabCBSManager`. Changing it re-channels the entries already captured.
 
 ## Themes
 
@@ -58,7 +58,7 @@ A theme is one USS file in `Editor/UI/Themes` that assigns the `--cc-*` variable
 
 ## Reading a stack trace
 
-Selecting an entry lists its stack frames with the infrastructure runs folded, and under every frame that has a file and line, a few lines of that file with the frame's line highlighted, in stack order, so the path the error took reads top to bottom without clicking through the frames. The number of lines on each side is the source preview length in Project Settings; a frame whose file cannot be read gets no block. Double-clicking a frame or its block opens the file in the code editor. Prefer one preview that follows the frame you click? Turn off "Source under every frame" in the File menu or on the Preferences page.
+Selecting an entry lists its stack frames with the infrastructure runs folded, and under every frame that has a file and line, a few lines of that file with the frame's line highlighted, in stack order, so the path the error took reads top to bottom without clicking through the frames. The number of lines on each side is the source preview length in Project Settings; a frame whose file cannot be read gets no block. Rest the pointer on a frame or its block and a card floats up with a longer stretch of the file, fifteen lines by default, formatted the same way; it flips to stay inside the window and disappears when the pointer leaves, the pane scrolls or you click. Its length is the hover card length in Project Settings. Double-clicking a frame or its block opens the file in the code editor. Prefer one preview that follows the frame you click? Turn off "Source under every frame" in the File menu or on the Preferences page.
 
 ## Reading in a narrow panel
 

@@ -62,22 +62,29 @@ namespace ClarityConsole.UI
 
         public void Show(SourceSnippet snippet, string displayPath)
         {
-            _lines.Clear();
-
             if (snippet == null)
             {
+                _lines.Clear();
                 _header.text = string.Empty;
-                tooltip = null;
                 style.display = DisplayStyle.None;
                 return;
             }
 
             style.display = DisplayStyle.Flex;
             _header.text = displayPath + ":" + snippet.HighlightLine;
-            tooltip = "Double-click to open " + displayPath + " at line " + snippet.HighlightLine + ".";
+            FillLines(_lines, snippet);
+        }
 
-            // Deeply nested code would otherwise start far to the right of its line number; the common
-            // indentation is dropped and only the relative indentation between the lines is kept.
+        /// <summary>
+        /// Replaces the children of <paramref name="container"/> with one numbered label per line of the
+        /// snippet, the highlighted line marked. Tabs become four spaces, and the indentation every
+        /// non-blank line shares is dropped so deeply nested code starts right after its number while the
+        /// relative nesting between the lines is kept.
+        /// </summary>
+        internal static void FillLines(VisualElement container, SourceSnippet snippet)
+        {
+            container.Clear();
+
             var expanded = new string[snippet.Lines.Count];
             for (int i = 0; i < expanded.Length; i++)
             {
@@ -98,7 +105,7 @@ namespace ClarityConsole.UI
                     line.AddToClassList(HighlightClass);
                 }
 
-                _lines.Add(line);
+                container.Add(line);
             }
         }
 

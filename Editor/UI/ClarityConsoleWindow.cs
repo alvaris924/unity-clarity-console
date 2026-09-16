@@ -161,6 +161,8 @@ namespace ClarityConsole.UI
             _detail = new DetailView { InlineSource = ConsolePreferences.InlineSource };
             _detail.FrameActivated += OpenFrame;
             _detail.SnippetProvider = TryGetSnippet;
+            _detail.HoverSnippetProvider = TryGetHoverSnippet;
+            _detail.HoverHost = root;
             _detail.FrameFilter = ClarityConsoleSettings.instance.CreateFrameFilter();
             _viewModel.IgnoreList = ClarityConsoleSettings.instance.CreateIgnoreList();
             ClarityConsoleSettings.Changed += OnSettingsChanged;
@@ -556,8 +558,19 @@ namespace ClarityConsole.UI
         /// <summary>Resolves a frame to a file and reads the lines around it, or null when it cannot.</summary>
         private SourceSnippet TryGetSnippet(TraceFrame frame)
         {
+            return TryGetSnippet(frame, ClarityConsoleSettings.instance.SourcePreviewRadius);
+        }
+
+        /// <summary>The longer stretch the hover card shows.</summary>
+        private SourceSnippet TryGetHoverSnippet(TraceFrame frame)
+        {
+            return TryGetSnippet(frame, ClarityConsoleSettings.instance.SourceHoverRadius);
+        }
+
+        private SourceSnippet TryGetSnippet(TraceFrame frame, int radius)
+        {
             return _navigator.TryResolveAbsolutePath(frame, out string absolutePath)
-                ? _sources.TryGet(absolutePath, frame.Line, ClarityConsoleSettings.instance.SourcePreviewRadius)
+                ? _sources.TryGet(absolutePath, frame.Line, radius)
                 : null;
         }
 
