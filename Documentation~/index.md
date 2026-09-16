@@ -46,9 +46,13 @@ Project Settings > Clarity Console holds the settings a team shares through vers
 
 The dropdown beside Clear empties the console when entering Play mode, when a recompile starts, or when a player build starts. Clearing also resets the journal, so nothing comes back after the reload. The Error Pause toggle pauses Play mode as soon as an error, exception or assertion is logged, which freezes the game on the frame that went wrong. These four are per-user preferences in `EditorPrefs`, not project settings: they are a personal habit rather than something a team shares.
 
+## Importing a log file
+
+Drop a `Player.log`, an Editor log or an Android `logcat` dump on the console window, or choose Open log file from the File menu, and it opens in a window of its own. The import is read-only: capture keeps running in the live window, and the imported one is not journaled. Unity logs keep their stack traces, and the `(Filename: ... Line: ...)` suffix becomes a clickable frame; logcat lines keep their level and their tag becomes a channel, so the chips work on a device log too. Severity is only taken from markers the file actually contains, so an import never invents errors that were not there.
+
 ## Exporting
 
-The Export menu in the toolbar writes the rows currently shown, filters and all, as text, Markdown or JSON, or copies them to the clipboard. Every export starts with a header naming the Unity version, the package version, the session and which filters were active, so a pasted log says where it came from. Right-clicking a row offers the same for a single entry through "Copy for a bug report".
+The File menu in the toolbar writes the rows currently shown, filters and all, as text, Markdown or JSON, or copies them to the clipboard. Every export starts with a header naming the Unity version, the package version, the session and which filters were active, so a pasted log says where it came from. Right-clicking a row offers the same for a single entry through "Copy for a bug report".
 
 ## Watching a value
 
