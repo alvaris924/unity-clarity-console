@@ -46,6 +46,12 @@ Session markers always show, whatever the query, so the stream keeps its shape. 
 
 Project Settings > Clarity Console holds the settings a team shares through version control. Frame folding lives there: whether to fold engine frames, and which type-name prefixes of your own to fold, one per line, such as a logging wrapper or an async library. The source preview length lives there too: how many lines to show on each side of the line a stack frame points at, zero for just that line. The channel pattern is a regular expression whose first group names the channel of a message, `^\[([\w.\- ]{1,64})\]` by default, so `[PlayFabCBSManager] ...` belongs to channel `PlayFabCBSManager`. Changing it re-channels the entries already captured.
 
+## Themes
+
+File > Theme in the toolbar switches the window's look. Native, the default, takes every colour from the Editor's own theme variables, so it matches the light or dark skin and any change Unity makes to it. Obsidian is a dark theme with a blue accent, Paper a warm light one, and Sci-fi a deep navy console with a cyan accent, a faint scanline overlay and a glowing frame around the source preview. The three designed themes set messages, stack frames and source lines in JetBrains Mono, bundled in `Editor/UI/Fonts` under the SIL Open Font License; Native keeps the Editor font. The choice is a per-user preference, not a project setting.
+
+A theme is one USS file in `Editor/UI/Themes` that assigns the `--cc-*` variables `ClarityConsole.uss` reads (background, panel, text, accent, severity colours and so on) and may restyle the built-in controls the window uses. To add one, drop a sheet in that folder, register it in `ConsoleThemes`, and it appears in the menu.
+
 ## Clearing and pausing
 
 The dropdown beside Clear empties the console when entering Play mode, when a recompile starts, or when a player build starts. Clearing also resets the journal, so nothing comes back after the reload. The Error Pause toggle pauses Play mode as soon as an error, exception or assertion is logged, which freezes the game on the frame that went wrong. These four are per-user preferences in `EditorPrefs`, not project settings: they are a personal habit rather than something a team shares.
@@ -73,6 +79,7 @@ Right-click a row to silence that exact message or its whole channel. Rules are 
 | Captured entries | `Library/ClarityConsole/journal-*.bin`, segmented, 32 MB budget by default | Domain reload, Play mode, Editor restart, Editor crash up to the last drain |
 | Play session counter | `SessionState` | Domain reload; continues from the journal after a restart |
 | Project settings | `ProjectSettings/ClarityConsole.asset` | Everything; commit it with the project |
+| Preferences (theme, clear-on, Error Pause) | `EditorPrefs` | Everything; per user, not shared |
 
 Clear in the window deletes the journal. Deleting the folder while the Editor is closed has the same effect.
 

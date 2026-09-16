@@ -1,0 +1,32 @@
+/*
+ * Native: follows the Editor's own skin, dark or light, through Unity's built-in USS variables, and
+ * leaves every built-in control exactly as the Editor draws it. This is the default so the console
+ * looks like it belongs in the Editor it runs in.
+ */
+
+.cc-root {
+    --cc-bg: var(--unity-colors-window-background);
+    --cc-panel: var(--unity-colors-window-background);
+    --cc-row-alt: var(--unity-colors-alternated_rows-background);
+    --cc-text: var(--unity-colors-default-text);
+    --cc-text-dim: var(--unity-colors-label-text);
+    --cc-border: var(--unity-colors-default-border);
+    --cc-accent: var(--unity-colors-highlight-background);
+    --cc-accent-soft: rgba(44, 93, 135, 0.45);
+    --cc-hover: var(--unity-colors-highlight-background-hover);
+    --cc-toolbar: var(--unity-colors-toolbar-background);
+    --cc-log: #8fd3ff;
+    --cc-warning: var(--unity-colors-warning-text);
+    --cc-error: var(--unity-colors-error-text);
+    --cc-marker: #8fa3bf;
+    --cc-link: var(--unity-colors-link-text);
+    --cc-link-hover: var(--unity-colors-link-text);
+    --cc-timeline-bg: rgba(0, 0, 0, 0.12);
+    --cc-chip-bg: rgba(127, 127, 127, 0.08);
+}
+
+/* The status bar and chip row take the window colour so nothing paints over the native look. */
+.cc-status,
+.cc-channels {
+    background-color: transparent;
+}

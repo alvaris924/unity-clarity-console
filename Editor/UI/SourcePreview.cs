@@ -66,6 +66,7 @@ namespace ClarityConsole.UI
                 int number = snippet.FirstLine + i;
                 var line = new Label(number.ToString().PadLeft(width) + "  " + snippet.Lines[i].Replace("\t", "    "));
                 line.AddToClassList(LineClass);
+                line.AddToClassList("cc-mono");
                 if (i == snippet.HighlightIndex)
                 {
                     line.AddToClassList(HighlightClass);

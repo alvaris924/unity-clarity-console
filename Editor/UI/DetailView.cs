@@ -34,6 +34,7 @@ namespace ClarityConsole.UI
 
             _message = new TextField { multiline = true, isReadOnly = true };
             _message.AddToClassList("cc-detail-message");
+            _message.AddToClassList("cc-mono");
             Add(_message);
 
             _frames = new VisualElement();
@@ -221,6 +222,7 @@ namespace ClarityConsole.UI
         {
             var label = new Label(Format(frame));
             label.AddToClassList(FrameClass);
+            label.AddToClassList("cc-mono");
 
             if (frame.HasLocation)
             {
