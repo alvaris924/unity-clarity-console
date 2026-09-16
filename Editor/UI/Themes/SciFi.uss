@@ -2,7 +2,7 @@
  * Sci-fi: deep navy panels, one cyan accent for anything live or selected, amber and hot red for
  * warnings and errors so severity still reads at a glance, a monospace face throughout, uppercase
  * letter-spaced headers, a glowing frame around the source preview and a faint scanline overlay.
- * All original work; the two textures are generated procedurally by the package's own script.
+ * All original work; the two textures are generated procedurally by Tools~/make_textures.py.
  */
 
 .cc-root {
