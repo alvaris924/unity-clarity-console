@@ -33,6 +33,9 @@ namespace ClarityConsole.UI
         private MultiColumnListView _list;
         private ScrollView _listScrollView;
         private ToolbarToggle _collapseToggle;
+        private ToolbarToggle _wrapToggle;
+        private Column _timeColumn;
+        private Column _frameColumn;
         private ToolbarToggle _logToggle;
         private ToolbarToggle _warningToggle;
         private ToolbarToggle _errorToggle;
@@ -153,6 +156,7 @@ namespace ClarityConsole.UI
             var split = new TwoPaneSplitView(1, 140, TwoPaneSplitViewOrientation.Vertical);
             split.AddToClassList("cc-split");
             _list = BuildList();
+            ApplyWrap(ConsolePreferences.WrapMessages);
             split.Add(_list);
             _detail = new DetailView();
             _detail.FrameActivated += OpenFrame;
@@ -210,6 +214,11 @@ namespace ClarityConsole.UI
             _collapseToggle.RegisterValueChangedCallback(evt => _viewModel.Collapse = evt.newValue);
             toolbar.Add(_collapseToggle);
 
+            _wrapToggle = new ToolbarToggle { text = "Wrap", value = ConsolePreferences.WrapMessages };
+            _wrapToggle.tooltip = "Wrap long messages so nothing is cut off in a narrow window. Rows grow as needed.";
+            _wrapToggle.RegisterValueChangedCallback(evt => ConsolePreferences.WrapMessages = evt.newValue);
+            toolbar.Add(_wrapToggle);
+
             if (IsImport)
             {
                 clearOptions.SetEnabled(false);
@@ -235,9 +244,20 @@ namespace ClarityConsole.UI
                     _ => ReferenceEquals(_theme, candidate) ? DropdownMenuAction.Status.Checked : DropdownMenuAction.Status.Normal);
             }
 
+            AppendPreferenceToggle(export, "Columns/Time", () => ConsolePreferences.ShowTime, v => ConsolePreferences.ShowTime = v);
+            AppendPreferenceToggle(export, "Columns/Frame", () => ConsolePreferences.ShowFrame, v => ConsolePreferences.ShowFrame = v);
+            export.menu.AppendSeparator();
+            export.menu.AppendAction("Preferences…", _ => SettingsService.OpenUserPreferences(ClarityConsolePreferencesProvider.Path));
+
             toolbar.Add(export);
 
             toolbar.Add(new ToolbarSpacer { flex = true });
+
+            // The search field and the severity toggles travel as one group, so a narrow window moves
+            // them to a second line together instead of clipping the toggles on the right.
+            var right = new VisualElement();
+            right.AddToClassList("cc-toolbar-right");
+            toolbar.Add(right);
 
             _searchField = new ToolbarSearchField();
             _searchField.AddToClassList("cc-search");
@@ -246,7 +266,7 @@ namespace ClarityConsole.UI
                 "/regex/i matches a pattern, sev:error,warn and tag:PlayFab* filter, in:stack also searches " +
                 "stack traces, and A OR B matches either.";
             _searchField.RegisterValueChangedCallback(_ => ScheduleSearch());
-            toolbar.Add(_searchField);
+            right.Add(_searchField);
 
             _logToggle = BuildSeverityToggle(_logIcon, "cc-toggle-log", visible => _viewModel.SetSeverityVisible(LogSeverity.Log, visible));
             _warningToggle = BuildSeverityToggle(_warningIcon, "cc-toggle-warning", visible => _viewModel.SetSeverityVisible(LogSeverity.Warning, visible));
@@ -256,9 +276,9 @@ namespace ClarityConsole.UI
                 _viewModel.SetSeverityVisible(LogSeverity.Exception, visible);
                 _viewModel.SetSeverityVisible(LogSeverity.Assert, visible);
             });
-            toolbar.Add(_logToggle);
-            toolbar.Add(_warningToggle);
-            toolbar.Add(_errorToggle);
+            right.Add(_logToggle);
+            right.Add(_warningToggle);
+            right.Add(_errorToggle);
 
             return toolbar;
         }
@@ -307,22 +327,30 @@ namespace ClarityConsole.UI
                 makeCell = MakeIconCell,
                 bindCell = BindSeverityCell,
             });
-            list.columns.Add(new Column
+            // Time and Frame are optional: off by default so a narrow panel is mostly message, switchable
+            // from the header's context menu or the Preferences page.
+            _timeColumn = new Column
             {
                 name = "time",
                 title = "Time",
                 width = 96,
+                optional = true,
+                visible = ConsolePreferences.ShowTime,
                 makeCell = MakeLabelCell,
                 bindCell = (cell, index) => ((Label)cell).text = _viewModel.Visible[index].TimestampUtc.ToLocalTime().ToString("HH:mm:ss.fff"),
-            });
-            list.columns.Add(new Column
+            };
+            list.columns.Add(_timeColumn);
+            _frameColumn = new Column
             {
                 name = "frame",
                 title = "Frame",
                 width = 64,
+                optional = true,
+                visible = ConsolePreferences.ShowFrame,
                 makeCell = MakeLabelCell,
                 bindCell = BindFrameCell,
-            });
+            };
+            list.columns.Add(_frameColumn);
             list.columns.Add(new Column
             {
                 name = "message",
@@ -362,6 +390,7 @@ namespace ClarityConsole.UI
         {
             var label = new Label();
             label.AddToClassList("cc-cell");
+            label.AddToClassList("cc-cell-message");
             label.AddToClassList("cc-mono");
             label.AddManipulator(new ContextualMenuManipulator(evt => BuildRowMenu(evt, label.userData as LogEntry)));
             return label;
@@ -715,6 +744,19 @@ namespace ClarityConsole.UI
         {
             _errorPauseToggle?.SetValueWithoutNotify(ConsolePreferences.ErrorPause);
 
+            bool wrap = ConsolePreferences.WrapMessages;
+            _wrapToggle?.SetValueWithoutNotify(wrap);
+            if (wrap != Wraps)
+            {
+                ApplyWrap(wrap);
+            }
+
+            if (_timeColumn != null)
+            {
+                _timeColumn.visible = ConsolePreferences.ShowTime;
+                _frameColumn.visible = ConsolePreferences.ShowFrame;
+            }
+
             ConsoleTheme wanted = ConsoleThemes.Find(ConsolePreferences.Theme);
             if (!ReferenceEquals(wanted, _theme))
             {
@@ -724,6 +766,32 @@ namespace ClarityConsole.UI
 
         /// <summary>The theme currently applied to this window.</summary>
         public ConsoleTheme Theme => _theme;
+
+        /// <summary>Whether long messages currently wrap in the list.</summary>
+        public bool Wraps => rootVisualElement.ClassListContains(WrapClass);
+
+        private const string WrapClass = "cc-wrap";
+
+        /// <summary>
+        /// Switches the list between fixed-height rows, the cheap default, and rows that grow to fit a
+        /// wrapped message. The stylesheet does the wrapping through the root class; the list only has
+        /// to measure rows instead of assuming their height.
+        /// </summary>
+        private void ApplyWrap(bool wrap)
+        {
+            rootVisualElement.EnableInClassList(WrapClass, wrap);
+            if (_list == null)
+            {
+                return;
+            }
+
+            _list.virtualizationMethod = wrap ? CollectionVirtualizationMethod.DynamicHeight : CollectionVirtualizationMethod.FixedHeight;
+            _list.Rebuild();
+            if (_stickToBottom && _viewModel != null && _viewModel.Visible.Count > 0)
+            {
+                _list.schedule.Execute(() => _list.ScrollToItem(-1));
+            }
+        }
 
         /// <summary>Swaps the theme stylesheet and the root class that names it. Safe to call repeatedly.</summary>
         private void ApplyTheme(ConsoleTheme theme)
@@ -833,6 +901,34 @@ namespace ClarityConsole.UI
             _errorToggle.text = (store.CountOf(LogSeverity.Error) + store.CountOf(LogSeverity.Exception) + store.CountOf(LogSeverity.Assert)).ToString();
             RefreshChannels();
             UpdateStatus();
+            SyncColumnPreferences();
+        }
+
+        /// <summary>
+        /// The header's context menu toggles columns directly on the list; there is no change event for
+        /// that on every supported Unity version, so the periodic tick copies the state into the
+        /// preferences, which brings every other console window along.
+        /// </summary>
+        private void SyncColumnPreferences()
+        {
+            if (_timeColumn == null)
+            {
+                return;
+            }
+
+            // Read both before writing either: each write raises Changed, which pushes every preference
+            // back onto the columns and would undo a second change that has not been recorded yet.
+            bool time = _timeColumn.visible;
+            bool frame = _frameColumn.visible;
+            if (time != ConsolePreferences.ShowTime)
+            {
+                ConsolePreferences.ShowTime = time;
+            }
+
+            if (frame != ConsolePreferences.ShowFrame)
+            {
+                ConsolePreferences.ShowFrame = frame;
+            }
         }
 
         private void UpdateStatus()

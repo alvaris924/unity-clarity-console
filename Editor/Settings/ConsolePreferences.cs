@@ -43,6 +43,27 @@ namespace ClarityConsole.Settings
             set => Set(nameof(ClearOnBuild), value);
         }
 
+        /// <summary>Show the Time column. Off by default so the list stays readable in a narrow panel.</summary>
+        public static bool ShowTime
+        {
+            get => Get(nameof(ShowTime), false);
+            set => Set(nameof(ShowTime), value);
+        }
+
+        /// <summary>Show the Frame column. Off by default so the list stays readable in a narrow panel.</summary>
+        public static bool ShowFrame
+        {
+            get => Get(nameof(ShowFrame), false);
+            set => Set(nameof(ShowFrame), value);
+        }
+
+        /// <summary>Wrap long messages in the list so rows grow instead of cutting the text off.</summary>
+        public static bool WrapMessages
+        {
+            get => Get(nameof(WrapMessages), false);
+            set => Set(nameof(WrapMessages), value);
+        }
+
         /// <summary>Id of the console's look. Empty means the default theme.</summary>
         public static string Theme
         {
@@ -67,6 +88,9 @@ namespace ClarityConsole.Settings
             EditorPrefs.DeleteKey(Prefix + nameof(ClearOnPlay));
             EditorPrefs.DeleteKey(Prefix + nameof(ClearOnRecompile));
             EditorPrefs.DeleteKey(Prefix + nameof(ClearOnBuild));
+            EditorPrefs.DeleteKey(Prefix + nameof(ShowTime));
+            EditorPrefs.DeleteKey(Prefix + nameof(ShowFrame));
+            EditorPrefs.DeleteKey(Prefix + nameof(WrapMessages));
             EditorPrefs.DeleteKey(Prefix + nameof(Theme));
             Changed?.Invoke();
         }

@@ -22,8 +22,40 @@
     flex-grow: 1;
 }
 
+/* The toolbar flows onto a second line when the window is too narrow for one, instead of clipping
+   the severity toggles on the right. Buttons keep their size. The search field and the toggles form
+   one group that first gives up search width, then moves to the next line as a whole. */
+.cc-toolbar {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 21px;
+}
+
+/* Explicit heights: the built-in controls size themselves from the toolbar, which no longer has a
+   fixed height once it can wrap, so each line takes the height the toolbar used to have. */
+.cc-toolbar > * {
+    flex-shrink: 0;
+    height: 20px;
+}
+
+.cc-toolbar-right {
+    flex-direction: row;
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: 250px;
+    min-width: 250px;
+    max-width: 390px;
+}
+
+.cc-toolbar-right > .unity-toolbar-toggle {
+    height: 20px;
+}
+
 .cc-search {
-    width: 220px;
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 80px;
+    max-width: 220px;
 }
 
 .cc-search-invalid {
@@ -112,6 +144,28 @@
     width: 14px;
     height: 14px;
     align-self: center;
+}
+
+/* Wrap mode: the message cell wraps and every cell aligns to the first line of a tall row. */
+.cc-wrap .cc-cell {
+    -unity-text-align: upper-left;
+    padding-top: 3px;
+    padding-bottom: 2px;
+}
+
+.cc-wrap .cc-cell-message {
+    white-space: normal;
+    text-overflow: clip;
+    max-height: 100px;
+}
+
+.cc-wrap .cc-cell-icon {
+    align-self: flex-start;
+    margin-top: 3px;
+}
+
+.cc-wrap .cc-frame {
+    white-space: normal;
 }
 
 .cc-msg-warning {
