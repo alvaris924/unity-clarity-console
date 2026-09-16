@@ -25,6 +25,10 @@ namespace ClarityConsole.UI
         private const long CountsIntervalMs = 500;
         private const double NoticeSeconds = 5;
 
+        [SerializeField]
+        private string _importedPath;
+
+        private LogStore _importedStore;
         private ConsoleViewModel _viewModel;
         private MultiColumnListView _list;
         private ScrollView _listScrollView;
@@ -66,10 +70,44 @@ namespace ClarityConsole.UI
 
         private void OnEnable()
         {
-            titleContent = new GUIContent("Clarity Console");
-            _viewModel = new ConsoleViewModel(LogCaptureBootstrap.Store);
-            _viewModel.Changed += OnViewChanged;
+            // An imported window re-reads its file after a domain reload: the entries are not journaled,
+            // and re-parsing is cheaper than serializing them through the window.
+            if (!string.IsNullOrEmpty(_importedPath) && !TryLoadImport(_importedPath, out _))
+            {
+                _importedPath = null;
+            }
+
+            titleContent = new GUIContent(IsImport ? Path.GetFileName(_importedPath) : "Clarity Console");
+            Rebind();
         }
+
+        /// <summary>
+        /// Points the view model at whichever store this window should show. Called again after an import
+        /// because <see cref="ScriptableObject.CreateInstance{T}"/> runs OnEnable before the file is read.
+        /// </summary>
+        private void Rebind()
+        {
+            if (_viewModel != null)
+            {
+                _viewModel.Changed -= OnViewChanged;
+                _viewModel.Dispose();
+            }
+
+            _viewModel = new ConsoleViewModel(_importedStore ?? LogCaptureBootstrap.Store);
+            _viewModel.Changed += OnViewChanged;
+
+            if (_list == null)
+            {
+                return;
+            }
+
+            _viewModel.IgnoreList = ClarityConsoleSettings.instance.CreateIgnoreList();
+            _list.itemsSource = _viewModel.Visible;
+            RequestRefresh();
+        }
+
+        /// <summary>True when this window shows a file rather than the live Editor log.</summary>
+        public bool IsImport => _importedStore != null;
 
         private void OnDisable()
         {
@@ -128,6 +166,7 @@ namespace ClarityConsole.UI
                 _listScrollView.verticalScroller.valueChanged += OnListScrolled;
             }
 
+            RegisterDropTarget(root);
             _list.itemsSource = _viewModel.Visible;
             root.schedule.Execute(UpdateCounts).Every(CountsIntervalMs);
             UpdateCounts();
@@ -159,8 +198,16 @@ namespace ClarityConsole.UI
             _collapseToggle.RegisterValueChangedCallback(evt => _viewModel.Collapse = evt.newValue);
             toolbar.Add(_collapseToggle);
 
-            var export = new ToolbarMenu { text = "Export" };
-            export.tooltip = "Write the rows currently shown, filters and all, to a file.";
+            if (IsImport)
+            {
+                clearOptions.SetEnabled(false);
+                _errorPauseToggle.SetEnabled(false);
+            }
+
+            var export = new ToolbarMenu { text = "File" };
+            export.tooltip = "Open a log file from a build or a device, or write the rows currently shown to one.";
+            export.menu.AppendAction("Open log file…", _ => OpenLogFile());
+            export.menu.AppendSeparator();
             export.menu.AppendAction("Save as text…", _ => SaveVisible(ExportFormat.Text));
             export.menu.AppendAction("Save as Markdown…", _ => SaveVisible(ExportFormat.Markdown));
             export.menu.AppendAction("Save as JSON…", _ => SaveVisible(ExportFormat.Json));
@@ -503,6 +550,131 @@ namespace ClarityConsole.UI
             _stickToBottom = value >= _listScrollView.verticalScroller.highValue - RowHeight;
         }
 
+        /// <summary>Asks for a log file and opens it in its own window.</summary>
+        public static void OpenLogFile()
+        {
+            string path = EditorUtility.OpenFilePanelWithFilters(
+                "Open a log file",
+                string.Empty,
+                new[] { "Log files", "log,txt", "All files", "*" });
+
+            if (!string.IsNullOrEmpty(path))
+            {
+                OpenImport(path);
+            }
+        }
+
+        /// <summary>Opens a log file in its own window. Returns null when the file cannot be read.</summary>
+        public static ClarityConsoleWindow OpenImport(string path)
+        {
+            var window = CreateInstance<ClarityConsoleWindow>();
+            if (!window.TryLoadImport(path, out string error))
+            {
+                DestroyImmediate(window);
+                Debug.LogWarning("[ClarityConsole] " + error);
+                return null;
+            }
+
+            window._importedPath = path;
+            window.titleContent = new GUIContent(Path.GetFileName(path));
+            window.Show();
+            return window;
+        }
+
+        /// <summary>Reads and parses a log file into this window's own store.</summary>
+        internal bool TryLoadImport(string path, out string error)
+        {
+            error = null;
+            try
+            {
+                var info = new FileInfo(path);
+                if (!info.Exists)
+                {
+                    error = "There is no file at " + path + ".";
+                    return false;
+                }
+
+                if (info.Length > LogFileParser.MaxBytes)
+                {
+                    error = Path.GetFileName(path) + " is larger than " + (LogFileParser.MaxBytes / (1024 * 1024)) + " MB, so it was not imported.";
+                    return false;
+                }
+
+                LogFileImport import = LogFileParser.Parse(File.ReadAllText(path));
+
+                // Room for every entry plus the marker that says where they came from.
+                var store = new LogStore(import.Entries.Count + 1);
+                store.Append(LogEntry.Marker(
+                    "Imported " + Path.GetFileName(path) + " as " + import.Describe() + ", " + import.Entries.Count + " entries",
+                    DateTime.UtcNow,
+                    0));
+
+                foreach (LogEntry entry in import.Entries)
+                {
+                    store.Append(entry);
+                }
+
+                _importedStore = store;
+                ImportedFormat = import.Format;
+                Rebind();
+                return true;
+            }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException || ex is ArgumentException || ex is NotSupportedException)
+            {
+                error = "Could not read " + path + ": " + ex.Message;
+                return false;
+            }
+        }
+
+        /// <summary>The format detected for an imported file.</summary>
+        public LogFileFormat ImportedFormat { get; private set; }
+
+        private void RegisterDropTarget(VisualElement root)
+        {
+            root.RegisterCallback<DragUpdatedEvent>(_ =>
+            {
+                if (FirstDroppedFile() != null)
+                {
+                    DragAndDrop.visualMode = DragAndDropVisualMode.Generic;
+                }
+            });
+
+            root.RegisterCallback<DragPerformEvent>(_ =>
+            {
+                string path = FirstDroppedFile();
+                if (path == null)
+                {
+                    return;
+                }
+
+                DragAndDrop.AcceptDrag();
+                if (OpenImport(path) == null)
+                {
+                    ShowNotice("Could not import " + Path.GetFileName(path) + ".");
+                }
+            });
+        }
+
+        /// <summary>The first dropped path that looks like a log file, or null.</summary>
+        private static string FirstDroppedFile()
+        {
+            foreach (string path in DragAndDrop.paths)
+            {
+                if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                {
+                    continue;
+                }
+
+                string extension = Path.GetExtension(path).ToLowerInvariant();
+                if (extension == ".log" || extension == ".txt")
+                {
+                    return path;
+                }
+            }
+
+            return null;
+        }
+
         private void OnPreferencesChanged()
         {
             _errorPauseToggle?.SetValueWithoutNotify(ConsolePreferences.ErrorPause);
@@ -616,6 +788,12 @@ namespace ClarityConsole.UI
 
             _status.RemoveFromClassList("cc-status-error");
             LogStore store = _viewModel.Store;
+            if (IsImport)
+            {
+                _status.text = $"{Path.GetFileName(_importedPath)}   ·   {store.Count:N0} entries   ·   {_viewModel.Visible.Count:N0} shown   ·   imported as {new LogFileImport(ImportedFormat, Array.Empty<LogEntry>()).Describe()}";
+                return;
+            }
+
             double journalMb = LogCaptureBootstrap.Journal.SizeBytes / (1024.0 * 1024.0);
             string ignored = _viewModel.IgnoredCount > 0 ? $"   ·   {_viewModel.IgnoredCount:N0} ignored" : string.Empty;
             _status.text = $"{store.Count:N0} of {store.Capacity:N0} entries   ·   {_viewModel.Visible.Count:N0} shown{ignored}   ·   session {store.CurrentSession}   ·   journal {journalMb:0.0} MB";
