@@ -21,6 +21,10 @@ Clarity Console is an open-source, dependency-free Console window replacement fo
 - [ADR-0003: Zero third-party dependencies](adr/0003-dependency-policy.md)
 - [ADR-0004: GitHub flow with tags, no development branch](adr/0004-branching-model.md)
 
+## The timeline
+
+The strip above the list charts the rows currently shown across the time they span, one bar per slice, stacked as logs, warnings and errors from the bottom up. It follows every filter, so narrowing to a channel or a query redraws it for those rows alone. Click a bar to jump the list to that moment; clicking an empty slice lands on the nearest earlier one with entries. Hover for the exact span.
+
 ## Searching
 
 The search field takes a small query language. Terms are joined by an implicit AND.

@@ -39,6 +39,7 @@ namespace ClarityConsole.UI
         private ToolbarToggle _errorPauseToggle;
         private ToolbarSearchField _searchField;
         private ChannelBar _channels;
+        private TimelineStrip _timeline;
         private DetailView _detail;
         private readonly SourceNavigator _navigator = new SourceNavigator();
         private readonly SourceCache _sources = new SourceCache();
@@ -141,6 +142,10 @@ namespace ClarityConsole.UI
             _channels = new ChannelBar();
             _channels.ChannelToggled += OnChannelToggled;
             root.Add(_channels);
+
+            _timeline = new TimelineStrip();
+            _timeline.SliceActivated += JumpToRow;
+            root.Add(_timeline);
 
             var split = new TwoPaneSplitView(1, 140, TwoPaneSplitViewOrientation.Vertical);
             split.AddToClassList("cc-split");
@@ -533,6 +538,19 @@ namespace ClarityConsole.UI
             UpdateStatus();
         }
 
+        /// <summary>Selects a row and scrolls it into view, pausing auto-scroll so it stays there.</summary>
+        private void JumpToRow(int index)
+        {
+            if (_list == null || index < 0 || index >= _viewModel.Visible.Count)
+            {
+                return;
+            }
+
+            _stickToBottom = false;
+            _list.SetSelection(index);
+            _list.ScrollToItem(index);
+        }
+
         private void OnChannelToggled(string channel, bool selected)
         {
             _viewModel.SetChannelSelected(channel, selected);
@@ -723,6 +741,7 @@ namespace ClarityConsole.UI
 
             _viewModel.Flush();
             _list.Rebuild();
+            _timeline?.Refresh(_viewModel.Visible);
             if (_stickToBottom && _viewModel.Visible.Count > 0)
             {
                 _list.schedule.Execute(() => _list.ScrollToItem(-1));
