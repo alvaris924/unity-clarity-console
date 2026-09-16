@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using ClarityConsole.Core;
 using UnityEngine.UIElements;
 
@@ -75,11 +76,21 @@ namespace ClarityConsole.UI
             _header.text = displayPath + ":" + snippet.HighlightLine;
             tooltip = "Double-click to open " + displayPath + " at line " + snippet.HighlightLine + ".";
 
+            // Deeply nested code would otherwise start far to the right of its line number; the common
+            // indentation is dropped and only the relative indentation between the lines is kept.
+            var expanded = new string[snippet.Lines.Count];
+            for (int i = 0; i < expanded.Length; i++)
+            {
+                expanded[i] = snippet.Lines[i].Replace("\t", "    ");
+            }
+
+            int indent = CommonIndent(expanded);
             int width = (snippet.FirstLine + snippet.Lines.Count).ToString().Length;
-            for (int i = 0; i < snippet.Lines.Count; i++)
+            for (int i = 0; i < expanded.Length; i++)
             {
                 int number = snippet.FirstLine + i;
-                var line = new Label(number.ToString().PadLeft(width) + "  " + snippet.Lines[i].Replace("\t", "    "));
+                string code = expanded[i].Length > indent ? expanded[i].Substring(indent) : string.Empty;
+                var line = new Label(number.ToString().PadLeft(width) + "  " + code);
                 line.AddToClassList(LineClass);
                 line.AddToClassList("cc-mono");
                 if (i == snippet.HighlightIndex)
@@ -94,6 +105,29 @@ namespace ClarityConsole.UI
         public void Hide()
         {
             Show(null, null);
+        }
+
+        /// <summary>Leading spaces shared by every line that has any text; blank lines do not count.</summary>
+        internal static int CommonIndent(IReadOnlyList<string> lines)
+        {
+            int common = int.MaxValue;
+            foreach (string line in lines)
+            {
+                int spaces = 0;
+                while (spaces < line.Length && line[spaces] == ' ')
+                {
+                    spaces++;
+                }
+
+                if (spaces == line.Length)
+                {
+                    continue;
+                }
+
+                common = Math.Min(common, spaces);
+            }
+
+            return common == int.MaxValue ? 0 : common;
         }
     }
 }

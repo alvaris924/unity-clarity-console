@@ -34,5 +34,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ### Fixed
 
+- Source blocks drop the indentation every line shares, so deeply nested code starts right after its line number instead of far to the right; the relative indentation between the lines is kept.
 - Clear, a filter or a collapse no longer leaves the detail pane showing an entry that is gone from the list: the message, its stack frames and the highlighted source preview empty with it, and an entry that merely moved keeps its selection.
 - The journal no longer keeps old entries when Clear cannot delete its file because something else holds it open; the file is emptied instead, and a journal that resumes an existing segment now reports its true size.
