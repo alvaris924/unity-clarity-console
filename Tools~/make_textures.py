@@ -2,9 +2,10 @@
 
     python Tools~/make_textures.py
 
-scanlines.png : 4x4 tile, three clear rows and one faint dark row, tiled over the whole window.
-glow-frame.png: 48x48 nine-slice frame, a crisp 1px cyan line with a soft glow and a translucent fill.
-Both are original, procedural art. Unity keeps the import settings in the .meta files next to them.
+scanlines.png     : 4x4 tile, three clear rows and one faint dark row, tiled over the whole window (Sci-fi).
+glow-frame.png    : 48x48 nine-slice frame, a crisp 1px cyan line with a soft glow and a translucent fill (Sci-fi).
+ember-row-glow.png: 64x1 amber gradient, strongest at the left, stretched across the selected row (Ember).
+All are original, procedural art. Unity keeps the import settings in the .meta files next to them.
 """
 import os
 import struct
@@ -76,7 +77,21 @@ def glow_frame():
     write_png(os.path.join(OUT, "glow-frame.png"), size, size, rows)
 
 
+def ember_row_glow():
+    """64x1 strip: amber that fades out towards the right with an ease-out curve, so the selected row
+    glows from its left edge."""
+    width = 64
+    r, g, b = 255, 159, 67
+    row = []
+    for x in range(width):
+        t = x / (width - 1.0)
+        alpha = int(round(70 * (1.0 - t) ** 2))
+        row += [r, g, b, alpha]
+    write_png(os.path.join(OUT, "ember-row-glow.png"), width, 1, [row])
+
+
 scanlines()
 glow_frame()
-for name in ("scanlines.png", "glow-frame.png"):
+ember_row_glow()
+for name in ("scanlines.png", "glow-frame.png", "ember-row-glow.png"):
     print(name, os.path.getsize(os.path.join(OUT, name)), "bytes")

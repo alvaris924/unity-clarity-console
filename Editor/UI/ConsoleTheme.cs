@@ -38,8 +38,9 @@ namespace ClarityConsole.UI
         public static readonly ConsoleTheme Obsidian = new ConsoleTheme("obsidian", "Obsidian", Folder + "Obsidian.uss");
         public static readonly ConsoleTheme Paper = new ConsoleTheme("paper", "Paper", Folder + "Paper.uss");
         public static readonly ConsoleTheme SciFi = new ConsoleTheme("scifi", "Sci-fi", Folder + "SciFi.uss");
+        public static readonly ConsoleTheme Ember = new ConsoleTheme("ember", "Ember", Folder + "Ember.uss");
 
-        public static readonly IReadOnlyList<ConsoleTheme> All = new[] { Native, Obsidian, Paper, SciFi };
+        public static readonly IReadOnlyList<ConsoleTheme> All = new[] { Native, Obsidian, Paper, SciFi, Ember };
 
         public static ConsoleTheme Default => Native;
 
