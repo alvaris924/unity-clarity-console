@@ -41,6 +41,24 @@ namespace ClarityConsole.Tests.UI
         }
 
         [Test]
+        public void Show_AnExceptionMadeOnlyOfInfrastructureFrames_StartsUnfolded_ButAPlainLogStaysFolded()
+        {
+            var view = new DetailView { FrameFilter = new FrameFilter(hideEngineFrames: true, null) };
+            string trace = Trace(
+                "UnityEngine.UIElements.VerticalVirtualizationController`1[T].Setup (T recycledItem, System.Int32 newIndex) (at <8966e118d0054112ab94138b090bd323>:0)",
+                "UnityEngine.UIElements.DynamicHeightVirtualizationController`1[T].CycleItems (System.Int32 firstIndex) (at <8966e118d0054112ab94138b090bd323>:0)",
+                "UnityEditor.UIElements.EditorPanel.UpdateForRepaint () (at <0e51484d1fb34e86891cbbd11f912cdf>:0)");
+
+            view.Show(new LogEntry(LogEntryKind.Log, LogSeverity.Exception, "NullReferenceException: Object reference not set to an instance of an object", trace, DateTime.UtcNow, 0, 1, true, ObjectRef.None));
+            Assert.That(view.HiddenFrameCount, Is.EqualTo(0), "the engine frames are the whole story of an exception");
+            Assert.That(view.FrameRowCount, Is.EqualTo(3));
+
+            view.Show(new LogEntry(LogEntryKind.Log, LogSeverity.Log, "Created secure pipe via P/Invoke", trace, DateTime.UtcNow, 0, 1, true, ObjectRef.None));
+            Assert.That(view.HiddenFrameCount, Is.EqualTo(3), "the same frames under a plain log are boilerplate");
+            Assert.That(view.FrameRowCount, Is.EqualTo(1));
+        }
+
+        [Test]
         public void Show_Null_ClearsMessageAndRows()
         {
             var view = new DetailView();

@@ -854,6 +854,16 @@ namespace ClarityConsole.UI
 
         private void OnViewChanged(ViewChange change)
         {
+            // An emptied list must not keep its rows on screen until the debounced refresh. With dynamic
+            // row heights, Unity's virtualization reports the first visible index as -1 for zero items and
+            // then sets rows up at index -1, which throws inside the layout pass as soon as anything makes
+            // it cycle (a scroll, a resize, Play mode starting). Releasing the rows at once closes that gap.
+            if (change == ViewChange.Rebuilt && _viewModel.Visible.Count == 0)
+            {
+                FlushRefresh();
+                return;
+            }
+
             RequestRefresh();
         }
 
