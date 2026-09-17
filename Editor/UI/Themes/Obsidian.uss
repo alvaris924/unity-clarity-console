@@ -12,6 +12,7 @@
     --cc-border: #2c3038;
     --cc-accent: #7aa2f7;
     --cc-accent-soft: rgba(122, 162, 247, 0.22);
+    --cc-row-hover: rgba(122, 162, 247, 0.09);
     --cc-hover: rgba(255, 255, 255, 0.05);
     --cc-toolbar: #121317;
     --cc-log: #9ecbff;
@@ -90,10 +91,11 @@
 }
 
 .unity-collection-view__item:hover {
-    background-color: var(--cc-hover);
+    background-color: var(--cc-row-hover);
 }
 
 .unity-collection-view__item--selected,
+.unity-collection-view__item--selected:hover,
 .unity-list-view__item--selected {
     background-color: var(--cc-accent-soft);
 }

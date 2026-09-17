@@ -547,7 +547,9 @@ namespace ClarityConsole.UI
             TraceFrame frame = FrameGrouper.FindEntryFrame(entry.Trace, _detail.FrameFilter);
             if (frame == null)
             {
-                ShowNotice("No source location in this entry's stack trace.");
+                ShowNotice(entry.Trace.EntryFrame != null
+                    ? "Only folded frames have a source location. Expand them in the detail pane to open one."
+                    : "No source location in this entry's stack trace.");
             }
             else
             {
@@ -879,7 +881,10 @@ namespace ClarityConsole.UI
             }
 
             _viewModel.Flush();
-            _list.Rebuild();
+            // RefreshItems rebinds the rows that exist instead of recreating them, so the row under the
+            // pointer keeps its hover state while entries stream in. Rebuild is only for structural
+            // changes such as switching the virtualization method.
+            _list.RefreshItems();
             SyncDetailWithList();
             _timeline?.Refresh(_viewModel.Visible);
             if (_stickToBottom && _viewModel.Visible.Count > 0)

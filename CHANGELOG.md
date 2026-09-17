@@ -35,6 +35,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ### Fixed
 
+- A message logged through an installed package's own logging path, such as an AI or tooling package, no longer shows that package's internals as if they were the entry's stack: frames compiled from `Library/PackageCache` fold like engine frames, and Unity's own `Unity.*` namespaces count as engine code, so such an entry shows one folded row and no source blocks. "Fold package frames" in Project Settings turns this off; embedded and local packages are never folded by it.
+- A freshly opened console no longer draws an empty source-preview frame at the bottom of the detail pane before anything is selected.
+- Row hover no longer flickers or lights two rows while entries stream in: the list now rebinds its rows in place instead of recreating them on every refresh, the hover colour changes instantly rather than fading, and it is a plain darkened line in every designed theme, with the selected row keeping its highlight under the pointer.
 - Source blocks drop the indentation every line shares, so deeply nested code starts right after its line number instead of far to the right; the relative indentation between the lines is kept.
 - Clear, a filter or a collapse no longer leaves the detail pane showing an entry that is gone from the list: the message, its stack frames and the highlighted source preview empty with it, and an entry that merely moved keeps its selection.
 - The journal no longer keeps old entries when Clear cannot delete its file because something else holds it open; the file is emptied instead, and a journal that resumes an existing segment now reports its true size.
