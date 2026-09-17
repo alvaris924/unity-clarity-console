@@ -19,7 +19,8 @@ namespace ClarityConsole.UI
     internal sealed class ClarityConsoleWindow : EditorWindow
     {
         private const string StyleSheetPath = "Packages/com.alvaris.clarity-console/Editor/UI/ClarityConsole.uss";
-        private const int RowHeight = 20;
+        /// <summary>Row height for a text size: the glyphs plus the padding that keeps rows breathable.</summary>
+        private static int RowHeightFor(int textSize) => textSize + 9;
         private const long RefreshDelayMs = 50;
         private const long SearchDelayMs = 100;
         private const long CountsIntervalMs = 500;
@@ -172,6 +173,7 @@ namespace ClarityConsole.UI
             ConsolePreferences.Changed += OnPreferencesChanged;
             split.Add(_detail);
             root.Add(split);
+            ApplyTextSize(ConsolePreferences.TextSize);
 
             _status = new Label();
             _status.AddToClassList("cc-status");
@@ -253,6 +255,9 @@ namespace ClarityConsole.UI
             AppendPreferenceToggle(export, "Columns/Frame", () => ConsolePreferences.ShowFrame, v => ConsolePreferences.ShowFrame = v);
             AppendPreferenceToggle(export, "Source under every frame", () => ConsolePreferences.InlineSource, v => ConsolePreferences.InlineSource = v);
             AppendPreferenceToggle(export, "Show domain reloads", () => ConsolePreferences.ShowDomainReloads, v => ConsolePreferences.ShowDomainReloads = v);
+            export.menu.AppendAction("Text size/Smaller", _ => ConsolePreferences.TextSize--, _ => ConsolePreferences.TextSize > ConsolePreferences.MinTextSize ? DropdownMenuAction.Status.Normal : DropdownMenuAction.Status.Disabled);
+            export.menu.AppendAction("Text size/Larger", _ => ConsolePreferences.TextSize++, _ => ConsolePreferences.TextSize < ConsolePreferences.MaxTextSize ? DropdownMenuAction.Status.Normal : DropdownMenuAction.Status.Disabled);
+            export.menu.AppendAction("Text size/Default", _ => ConsolePreferences.TextSize = ConsolePreferences.DefaultTextSize, _ => ConsolePreferences.TextSize == ConsolePreferences.DefaultTextSize ? DropdownMenuAction.Status.Disabled : DropdownMenuAction.Status.Normal);
             export.menu.AppendSeparator();
             export.menu.AppendAction("Preferences…", _ => SettingsService.OpenUserPreferences(ClarityConsolePreferencesProvider.Path));
 
@@ -319,7 +324,7 @@ namespace ClarityConsole.UI
         {
             var list = new MultiColumnListView
             {
-                fixedItemHeight = RowHeight,
+                fixedItemHeight = RowHeightFor(ConsolePreferences.TextSize),
                 selectionType = SelectionType.Single,
                 showAlternatingRowBackgrounds = AlternatingRowBackground.ContentOnly,
             };
@@ -642,7 +647,7 @@ namespace ClarityConsole.UI
 
         private void OnListScrolled(float value)
         {
-            _stickToBottom = value >= _listScrollView.verticalScroller.highValue - RowHeight;
+            _stickToBottom = value >= _listScrollView.verticalScroller.highValue - RowHeightFor(ConsolePreferences.TextSize);
         }
 
         /// <summary>Asks for a log file and opens it in its own window.</summary>
@@ -797,6 +802,11 @@ namespace ClarityConsole.UI
                 _viewModel.ShowDomainReloads = ConsolePreferences.ShowDomainReloads;
             }
 
+            if (_textSize != ConsolePreferences.TextSize)
+            {
+                ApplyTextSize(ConsolePreferences.TextSize);
+            }
+
             ConsoleTheme wanted = ConsoleThemes.Find(ConsolePreferences.Theme);
             if (!ReferenceEquals(wanted, _theme))
             {
@@ -809,6 +819,38 @@ namespace ClarityConsole.UI
 
         /// <summary>Whether long messages currently wrap in the list.</summary>
         public bool Wraps => rootVisualElement.ClassListContains(WrapClass);
+
+        /// <summary>The list's text size in pixels; the detail pane runs one size smaller.</summary>
+        public int TextSize => _textSize;
+
+        private int _textSize;
+
+        /// <summary>
+        /// Sets the base font size on the root, which every label inherits unless a stylesheet pins its
+        /// own (chips, badges and column headers do), one size less on the detail pane, and a row height
+        /// to match. Fixed-height rows need a rebuild to take the new height.
+        /// </summary>
+        private void ApplyTextSize(int size)
+        {
+            _textSize = size;
+            rootVisualElement.style.fontSize = size;
+            if (_detail != null)
+            {
+                _detail.style.fontSize = size - 1;
+            }
+
+            if (_list == null)
+            {
+                return;
+            }
+
+            _list.fixedItemHeight = RowHeightFor(size);
+            _list.Rebuild();
+            if (_stickToBottom && _viewModel != null && _viewModel.Visible.Count > 0)
+            {
+                _list.schedule.Execute(() => _list.ScrollToItem(-1));
+            }
+        }
 
         private const string WrapClass = "cc-wrap";
 

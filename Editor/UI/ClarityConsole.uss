@@ -199,7 +199,6 @@
 }
 
 .cc-frame {
-    font-size: 11px;
     padding: 1px 2px;
     white-space: nowrap;
     color: var(--cc-text);
@@ -270,7 +269,6 @@
 }
 
 .cc-src-line {
-    font-size: 11px;
     padding: 0 6px;
     white-space: nowrap;
     -unity-font-style: normal;
@@ -284,7 +282,6 @@
 
 .cc-status {
     padding: 2px 6px;
-    font-size: 11px;
     color: var(--cc-text-dim);
     border-top-width: 1px;
     border-top-color: var(--cc-border);

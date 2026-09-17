@@ -44,6 +44,10 @@ namespace ClarityConsole.Tests.UI
                 Assert.That(root.Q<Toggle>("wrap").value, Is.False);
                 Assert.That(root.Q<DropdownField>("theme").value, Is.EqualTo(ConsoleThemes.Paper.DisplayName));
                 Assert.That(root.Q<Button>("reset"), Is.Not.Null);
+                var textSize = root.Q<SliderInt>("text-size");
+                Assert.That(textSize.value, Is.EqualTo(ConsolePreferences.TextSize));
+                Assert.That(textSize.lowValue, Is.EqualTo(ConsolePreferences.MinTextSize));
+                Assert.That(textSize.highValue, Is.EqualTo(ConsolePreferences.MaxTextSize));
             }
             finally
             {
