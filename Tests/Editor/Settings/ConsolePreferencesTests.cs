@@ -76,6 +76,33 @@ namespace ClarityConsole.Tests.Settings
         }
 
         [Test]
+        public void TextSize_DefaultsTo11_Clamps_AndResets()
+        {
+            int original = ConsolePreferences.TextSize;
+            try
+            {
+                ConsolePreferences.ResetToDefaults();
+                Assert.That(ConsolePreferences.TextSize, Is.EqualTo(ConsolePreferences.DefaultTextSize));
+
+                ConsolePreferences.TextSize = 13;
+                Assert.That(ConsolePreferences.TextSize, Is.EqualTo(13));
+
+                ConsolePreferences.TextSize = 40;
+                Assert.That(ConsolePreferences.TextSize, Is.EqualTo(ConsolePreferences.MaxTextSize), "clamped to the largest size");
+
+                ConsolePreferences.TextSize = 2;
+                Assert.That(ConsolePreferences.TextSize, Is.EqualTo(ConsolePreferences.MinTextSize), "clamped to the smallest size");
+
+                ConsolePreferences.ResetToDefaults();
+                Assert.That(ConsolePreferences.TextSize, Is.EqualTo(ConsolePreferences.DefaultTextSize));
+            }
+            finally
+            {
+                ConsolePreferences.TextSize = original;
+            }
+        }
+
+        [Test]
         public void ShowDomainReloads_IsOffByDefault_AndRoundTrips()
         {
             bool original = ConsolePreferences.ShowDomainReloads;

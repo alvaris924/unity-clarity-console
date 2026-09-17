@@ -52,6 +52,17 @@ namespace ClarityConsole.UI
             refreshers.Add(() => theme.SetValueWithoutNotify(ConsoleThemes.All[ThemeIndex()].DisplayName));
             root.Add(theme);
 
+            var textSize = new SliderInt("Text size", ConsolePreferences.MinTextSize, ConsolePreferences.MaxTextSize)
+            {
+                name = "text-size",
+                value = ConsolePreferences.TextSize,
+                showInputField = true,
+            };
+            textSize.tooltip = "Font size of the list rows in pixels; the detail pane uses one size less.";
+            textSize.RegisterValueChangedCallback(evt => ConsolePreferences.TextSize = evt.newValue);
+            refreshers.Add(() => textSize.SetValueWithoutNotify(ConsolePreferences.TextSize));
+            root.Add(textSize);
+
             AddToggle(root, refreshers, "wrap", "Wrap long messages", () => ConsolePreferences.WrapMessages, v => ConsolePreferences.WrapMessages = v);
             AddToggle(root, refreshers, "inline-source", "Source under every frame", () => ConsolePreferences.InlineSource, v => ConsolePreferences.InlineSource = v);
             AddHelp(root, "On, the detail pane shows a few lines of code under each stack frame in order, so the path an error took reads top to bottom. Off, one preview follows the frame you click.");

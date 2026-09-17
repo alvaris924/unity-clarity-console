@@ -1,5 +1,6 @@
 using System;
 using UnityEditor;
+using UnityEngine;
 
 namespace ClarityConsole.Settings
 {
@@ -74,6 +75,30 @@ namespace ClarityConsole.Settings
             set => Set(nameof(ShowDomainReloads), value);
         }
 
+        public const int MinTextSize = 8;
+        public const int MaxTextSize = 16;
+        public const int DefaultTextSize = 11;
+
+        /// <summary>
+        /// Font size, in pixels, of the list rows; the detail pane uses one size less. Chips, badges and
+        /// column headers keep their own small sizes.
+        /// </summary>
+        public static int TextSize
+        {
+            get => Mathf.Clamp(EditorPrefs.GetInt(Prefix + nameof(TextSize), DefaultTextSize), MinTextSize, MaxTextSize);
+            set
+            {
+                int clamped = Mathf.Clamp(value, MinTextSize, MaxTextSize);
+                if (TextSize == clamped)
+                {
+                    return;
+                }
+
+                EditorPrefs.SetInt(Prefix + nameof(TextSize), clamped);
+                Changed?.Invoke();
+            }
+        }
+
         /// <summary>Wrap long messages in the list so rows grow instead of cutting the text off.</summary>
         public static bool WrapMessages
         {
@@ -109,6 +134,7 @@ namespace ClarityConsole.Settings
             EditorPrefs.DeleteKey(Prefix + nameof(ShowFrame));
             EditorPrefs.DeleteKey(Prefix + nameof(InlineSource));
             EditorPrefs.DeleteKey(Prefix + nameof(ShowDomainReloads));
+            EditorPrefs.DeleteKey(Prefix + nameof(TextSize));
             EditorPrefs.DeleteKey(Prefix + nameof(WrapMessages));
             EditorPrefs.DeleteKey(Prefix + nameof(Theme));
             Changed?.Invoke();

@@ -68,7 +68,7 @@ The Time and Frame columns are off by default for the same reason: in a docked p
 
 ## Preferences
 
-Edit > Preferences > Clarity Console gathers the per-user switches in one place: the theme, wrap, source under every frame, the Time and Frame columns, Error Pause and the clear-on options, with a reset to defaults. The same switches are reachable from the toolbar and the File menu; the page follows changes made there. Preferences live in `EditorPrefs` and are never committed with the project, unlike Project Settings > Clarity Console, which holds what a team shares.
+Edit > Preferences > Clarity Console gathers the per-user switches in one place: the theme, the text size (8 to 16 px for the rows; the detail pane runs one size less, and File > Text size steps it too), wrap, source under every frame, the Time and Frame columns, Error Pause and the clear-on options, with a reset to defaults. The same switches are reachable from the toolbar and the File menu; the page follows changes made there. Preferences live in `EditorPrefs` and are never committed with the project, unlike Project Settings > Clarity Console, which holds what a team shares.
 
 ## Clearing and pausing
 

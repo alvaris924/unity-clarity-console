@@ -334,6 +334,7 @@ namespace ClarityConsole.UI
             }
 
             _hover = _hover ?? new SourceHoverCard();
+            _hover.style.fontSize = resolvedStyle.fontSize;
             _hover.Show(HoverHost, snippet, frame.FilePath, HoverHost.WorldToLocal(panelPosition));
         }
 
