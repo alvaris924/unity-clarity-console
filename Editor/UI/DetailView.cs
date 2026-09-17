@@ -156,6 +156,14 @@ namespace ClarityConsole.UI
             _message.SetValueWithoutNotify(entry.Message);
             _entryFrame = FrameGrouper.FindEntryFrame(entry.Trace, FrameFilter);
             _groups = FrameGrouper.Group(entry.Trace, FrameFilter);
+            if (IsFailure(entry.Severity) && _groups.Count == 1 && _groups[0].IsNoise)
+            {
+                // An exception thrown inside the engine or a package has nothing but infrastructure frames,
+                // and those are the whole story, so they start unfolded. A plain log from the same place is
+                // boilerplate and stays folded.
+                _expanded.Add(0);
+            }
+
             RenderFrames();
             SelectFrame(_entryFrame);
         }
@@ -205,6 +213,11 @@ namespace ClarityConsole.UI
             {
                 row.AddToClassList(FrameSelectedClass);
             }
+        }
+
+        private static bool IsFailure(LogSeverity severity)
+        {
+            return severity == LogSeverity.Error || severity == LogSeverity.Exception || severity == LogSeverity.Assert;
         }
 
         internal static string Format(TraceFrame frame)
