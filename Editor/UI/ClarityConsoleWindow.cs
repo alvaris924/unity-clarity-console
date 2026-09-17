@@ -36,6 +36,9 @@ namespace ClarityConsole.UI
         private ToolbarToggle _wrapToggle;
         private Column _timeColumn;
         private Column _frameColumn;
+        private Column _countColumn;
+        private const int SeverityColumnWidth = 22;
+        private const int CountColumnWidth = 36;
         private ToolbarToggle _logToggle;
         private ToolbarToggle _warningToggle;
         private ToolbarToggle _errorToggle;
@@ -99,7 +102,7 @@ namespace ClarityConsole.UI
                 _viewModel.Dispose();
             }
 
-            _viewModel = new ConsoleViewModel(_importedStore ?? LogCaptureBootstrap.Store);
+            _viewModel = new ConsoleViewModel(_importedStore ?? LogCaptureBootstrap.Store) { ShowDomainReloads = ConsolePreferences.ShowDomainReloads };
             _viewModel.Changed += OnViewChanged;
 
             if (_list == null)
@@ -249,6 +252,7 @@ namespace ClarityConsole.UI
             AppendPreferenceToggle(export, "Columns/Time", () => ConsolePreferences.ShowTime, v => ConsolePreferences.ShowTime = v);
             AppendPreferenceToggle(export, "Columns/Frame", () => ConsolePreferences.ShowFrame, v => ConsolePreferences.ShowFrame = v);
             AppendPreferenceToggle(export, "Source under every frame", () => ConsolePreferences.InlineSource, v => ConsolePreferences.InlineSource = v);
+            AppendPreferenceToggle(export, "Show domain reloads", () => ConsolePreferences.ShowDomainReloads, v => ConsolePreferences.ShowDomainReloads = v);
             export.menu.AppendSeparator();
             export.menu.AppendAction("Preferences…", _ => SettingsService.OpenUserPreferences(ClarityConsolePreferencesProvider.Path));
 
@@ -321,11 +325,15 @@ namespace ClarityConsole.UI
             };
             list.AddToClassList("cc-list");
 
+            // Fixed columns pin every width, since a column's default minimum of 35 would otherwise win and
+            // push the message to the right of a wide empty gutter.
             list.columns.Add(new Column
             {
                 name = "severity",
                 title = string.Empty,
-                width = 24,
+                width = SeverityColumnWidth,
+                minWidth = SeverityColumnWidth,
+                maxWidth = SeverityColumnWidth,
                 resizable = false,
                 makeCell = MakeIconCell,
                 bindCell = BindSeverityCell,
@@ -363,15 +371,21 @@ namespace ClarityConsole.UI
                 makeCell = MakeMessageCell,
                 bindCell = BindMessageCell,
             });
-            list.columns.Add(new Column
+            // The count column only has something to say while rows collapse or watch rows update, so it
+            // stays out of the way the rest of the time; see SyncCountColumn.
+            _countColumn = new Column
             {
                 name = "count",
                 title = string.Empty,
-                width = 48,
+                width = CountColumnWidth,
+                minWidth = CountColumnWidth,
+                maxWidth = CountColumnWidth,
                 resizable = false,
+                visible = false,
                 makeCell = MakeLabelCell,
                 bindCell = BindCountCell,
-            });
+            };
+            list.columns.Add(_countColumn);
 
             list.selectionChanged += OnSelectionChanged;
             list.itemsChosen += OnItemsChosen;
@@ -778,6 +792,11 @@ namespace ClarityConsole.UI
                 _detail.InlineSource = ConsolePreferences.InlineSource;
             }
 
+            if (_viewModel != null)
+            {
+                _viewModel.ShowDomainReloads = ConsolePreferences.ShowDomainReloads;
+            }
+
             ConsoleTheme wanted = ConsoleThemes.Find(ConsolePreferences.Theme);
             if (!ReferenceEquals(wanted, _theme))
             {
@@ -891,6 +910,7 @@ namespace ClarityConsole.UI
             }
 
             _viewModel.Flush();
+            SyncCountColumn();
             // RefreshItems rebinds the rows that exist instead of recreating them, so the row under the
             // pointer keeps its hover state while entries stream in. Rebuild is only for structural
             // changes such as switching the virtualization method.
@@ -903,6 +923,21 @@ namespace ClarityConsole.UI
             }
 
             UpdateStatus();
+        }
+
+        /// <summary>Shows the count column only while collapsing or watch rows give it something to show.</summary>
+        private void SyncCountColumn()
+        {
+            if (_countColumn == null)
+            {
+                return;
+            }
+
+            bool wanted = _viewModel.Collapse || _viewModel.HasWatchRows;
+            if (_countColumn.visible != wanted)
+            {
+                _countColumn.visible = wanted;
+            }
         }
 
         /// <summary>

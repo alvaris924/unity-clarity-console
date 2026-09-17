@@ -144,6 +144,7 @@
     width: 14px;
     height: 14px;
     align-self: center;
+    margin-left: 4px;
 }
 
 /* Wrap mode: the message cell wraps and every cell aligns to the first line of a tall row. */

@@ -44,7 +44,7 @@ The search field takes a small query language. Terms are joined by an implicit A
 | `in:stack` | Text and regex terms also search stack traces |
 | `A OR B` | Either side; binds tighter than the implicit AND |
 
-Session markers always show, whatever the query, so the stream keeps its shape. A query that cannot be parsed matches nothing and says why in the status bar.
+Session markers always show, whatever the query, so the stream keeps its shape; the "Domain reloaded" divider is the exception, hidden by default and listed again through File > "Show domain reloads" or the Preferences page. A query that cannot be parsed matches nothing and says why in the status bar.
 
 ## Settings
 

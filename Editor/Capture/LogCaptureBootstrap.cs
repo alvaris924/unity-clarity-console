@@ -45,7 +45,7 @@ namespace ClarityConsole.Capture
 
             Capture = new LogCapture(Store, sessionStateKey: PlaySessionKey);
             Capture.Drained += Journal.Flush;
-            Capture.Start(freshEditorSession ? "Editor started" : "Domain reloaded");
+            Capture.Start(freshEditorSession ? LogEntry.EditorStartedMarker : LogEntry.DomainReloadMarker);
 
             ClarityConsoleSettings.Changed += OnSettingsChanged;
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;

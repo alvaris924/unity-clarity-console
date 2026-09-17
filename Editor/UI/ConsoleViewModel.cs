@@ -30,6 +30,7 @@ namespace ClarityConsole.UI
         private readonly bool[] _severityVisible = new bool[SeverityCount];
         private LogQuery _query = LogQuery.Empty;
         private IgnoreList _ignoreList = IgnoreList.Empty;
+        private bool _showDomainReloads;
         private int _ignored;
         private bool _collapse;
         private int _pendingEvictions;
@@ -115,8 +116,30 @@ namespace ClarityConsole.UI
             }
         }
 
+        /// <summary>
+        /// Whether "Domain reloaded" dividers are listed. Off by default: a recompile happens many times an
+        /// hour and the divider says little, unlike the Play mode and Editor start markers, which always show.
+        /// </summary>
+        public bool ShowDomainReloads
+        {
+            get => _showDomainReloads;
+            set
+            {
+                if (_showDomainReloads == value)
+                {
+                    return;
+                }
+
+                _showDomainReloads = value;
+                Rebuild();
+            }
+        }
+
         /// <summary>Number of store entries the row at <paramref name="index"/> stands for; 1 unless collapsed.</summary>
         public int CountAt(int index) => _counts[index];
+
+        /// <summary>True while any visible row is a watch row, whose update count is worth a column.</summary>
+        public bool HasWatchRows => _watchRows.Count > 0;
 
         public bool IsSeverityVisible(LogSeverity severity) => _severityVisible[(int)severity];
 
@@ -271,7 +294,7 @@ namespace ClarityConsole.UI
         {
             if (entry.Kind == LogEntryKind.Marker)
             {
-                return true;
+                return _showDomainReloads || !entry.IsDomainReloadMarker;
             }
 
             if (!_severityVisible[(int)entry.Severity])

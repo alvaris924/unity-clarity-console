@@ -76,6 +76,27 @@ namespace ClarityConsole.Tests.Settings
         }
 
         [Test]
+        public void ShowDomainReloads_IsOffByDefault_AndRoundTrips()
+        {
+            bool original = ConsolePreferences.ShowDomainReloads;
+            try
+            {
+                ConsolePreferences.ResetToDefaults();
+                Assert.That(ConsolePreferences.ShowDomainReloads, Is.False);
+
+                ConsolePreferences.ShowDomainReloads = true;
+                Assert.That(ConsolePreferences.ShowDomainReloads, Is.True);
+
+                ConsolePreferences.ResetToDefaults();
+                Assert.That(ConsolePreferences.ShowDomainReloads, Is.False);
+            }
+            finally
+            {
+                ConsolePreferences.ShowDomainReloads = original;
+            }
+        }
+
+        [Test]
         public void InlineSource_IsOnByDefault_AndRoundTrips()
         {
             bool original = ConsolePreferences.InlineSource;
