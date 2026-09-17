@@ -29,8 +29,10 @@ namespace ClarityConsole.Core
         /// <summary>
         /// The frame to open for a trace once noise rules are applied: the same choice
         /// <see cref="ParsedTrace.EntryFrame"/> makes, but over the frames the filter keeps, so a
-        /// project's own logging wrapper is skipped too. Falls back to the unfiltered choice when every
-        /// located frame is noise.
+        /// project's own logging wrapper is skipped too. When the filter keeps nothing with a location,
+        /// the unfiltered choice still wins if it is the project's own code, so a prefix rule that folds
+        /// too much cannot hide the user's frame; engine and package frames get no such rescue, since a
+        /// message logged from inside a package has no frame worth opening.
         /// </summary>
         public static TraceFrame FindEntryFrame(ParsedTrace trace, FrameFilter filter)
         {
@@ -53,7 +55,14 @@ namespace ClarityConsole.Core
                 }
             }
 
-            return ParsedTrace.ChooseEntryFrame(kept) ?? trace.EntryFrame;
+            TraceFrame chosen = ParsedTrace.ChooseEntryFrame(kept);
+            if (chosen != null)
+            {
+                return chosen;
+            }
+
+            TraceFrame unfiltered = trace.EntryFrame;
+            return unfiltered != null && !unfiltered.IsEngineFrame && !unfiltered.IsPackageFrame ? unfiltered : null;
         }
 
         public static List<FrameGroup> Group(ParsedTrace trace, FrameFilter filter)
@@ -82,7 +91,8 @@ namespace ClarityConsole.Core
 
             if (!anyVisible)
             {
-                groups.Add(new FrameGroup(false, trace.Frames));
+                // Nothing the reader wrote: one folded row says so, and expands on request.
+                groups.Add(new FrameGroup(true, trace.Frames));
                 return groups;
             }
 

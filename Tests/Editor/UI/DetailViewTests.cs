@@ -35,6 +35,12 @@ namespace ClarityConsole.Tests.UI
         }
 
         [Test]
+        public void NewPane_ShowsNoPreviewFrame_BeforeAnythingIsSelected()
+        {
+            Assert.That(new DetailView().IsPreviewVisible, Is.False);
+        }
+
+        [Test]
         public void Show_Null_ClearsMessageAndRows()
         {
             var view = new DetailView();

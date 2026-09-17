@@ -51,6 +51,7 @@ namespace ClarityConsole.UI
             _preview = new SourcePreview();
             _preview.Activated += OpenSelectedFrame;
             AttachHover(_preview, () => SelectedFrame);
+            _preview.Hide();   // an empty preview would still draw its frame before the first selection
             Add(_preview);
 
             // A card that floats over the pane must not stay put while the pane scrolls under it.

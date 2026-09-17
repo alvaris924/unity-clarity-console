@@ -13,6 +13,7 @@
     --cc-border: var(--unity-colors-default-border);
     --cc-accent: var(--unity-colors-highlight-background);
     --cc-accent-soft: rgba(44, 93, 135, 0.45);
+    --cc-row-hover: var(--unity-colors-highlight-background-hover);
     --cc-hover: var(--unity-colors-highlight-background-hover);
     --cc-toolbar: var(--unity-colors-toolbar-background);
     --cc-log: #8fd3ff;

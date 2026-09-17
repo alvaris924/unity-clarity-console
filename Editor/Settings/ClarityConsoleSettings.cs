@@ -38,6 +38,9 @@ namespace ClarityConsole.Settings
         private bool _hideEngineFrames = true;
 
         [SerializeField]
+        private bool _hidePackageFrames = true;
+
+        [SerializeField]
         private string _hiddenFramePrefixes = string.Empty;
 
         [SerializeField]
@@ -106,6 +109,22 @@ namespace ClarityConsole.Settings
         }
 
         /// <summary>Fold frames from the engine, the Editor, the runtime and the capture path.</summary>
+        /// <summary>Fold frames compiled from installed packages, the ones under Library/PackageCache.</summary>
+        public bool HidePackageFrames
+        {
+            get => _hidePackageFrames;
+            set
+            {
+                if (_hidePackageFrames == value)
+                {
+                    return;
+                }
+
+                _hidePackageFrames = value;
+                Persist();
+            }
+        }
+
         public bool HideEngineFrames
         {
             get => _hideEngineFrames;
@@ -237,7 +256,7 @@ namespace ClarityConsole.Settings
         /// <summary>The frame filter these settings describe.</summary>
         public FrameFilter CreateFrameFilter()
         {
-            return new FrameFilter(HideEngineFrames, FrameFilter.ParsePrefixes(HiddenFramePrefixes));
+            return new FrameFilter(HideEngineFrames, HidePackageFrames, FrameFilter.ParsePrefixes(HiddenFramePrefixes));
         }
 
         public void ResetToDefaults()
@@ -247,6 +266,7 @@ namespace ClarityConsole.Settings
             _sourcePreviewRadius = SourceCache.DefaultRadius;
             _sourceHoverRadius = DefaultSourceHoverRadius;
             _hideEngineFrames = true;
+            _hidePackageFrames = true;
             _hiddenFramePrefixes = string.Empty;
             _ignoreRules.Clear();
             Persist();

@@ -14,6 +14,7 @@
     --cc-border: rgba(34, 211, 238, 0.28);
     --cc-accent: #22d3ee;
     --cc-accent-soft: rgba(34, 211, 238, 0.16);
+    --cc-row-hover: rgba(34, 211, 238, 0.07);
     --cc-hover: rgba(34, 211, 238, 0.08);
     --cc-toolbar: #0a1020;
     --cc-log: #7dd3fc;
@@ -127,8 +128,6 @@
     background-color: var(--cc-panel);
     border-left-width: 2px;
     border-left-color: transparent;
-    transition-property: background-color, border-left-color;
-    transition-duration: 0.1s;
 }
 
 .unity-collection-view__item--alternative-background {
@@ -136,10 +135,11 @@
 }
 
 .unity-collection-view__item:hover {
-    background-color: var(--cc-hover);
+    background-color: var(--cc-row-hover);
 }
 
 .unity-collection-view__item--selected,
+.unity-collection-view__item--selected:hover,
 .unity-list-view__item--selected {
     background-color: var(--cc-accent-soft);
     border-left-color: var(--cc-accent);

@@ -104,6 +104,14 @@ namespace ClarityConsole.Settings
             hideEngine.RegisterValueChangedCallback(evt => ClarityConsoleSettings.instance.HideEngineFrames = evt.newValue);
             root.Add(hideEngine);
 
+            var hidePackages = new Toggle("Fold package frames")
+            {
+                value = ClarityConsoleSettings.instance.HidePackageFrames,
+            };
+            hidePackages.tooltip = "Fold frames compiled from installed packages, the ones under Library/PackageCache, such as a package's own logging path. Your embedded and local packages are not affected.";
+            hidePackages.RegisterValueChangedCallback(evt => ClarityConsoleSettings.instance.HidePackageFrames = evt.newValue);
+            root.Add(hidePackages);
+
             var prefixes = new TextField("Also fold types starting with") { multiline = true, value = ClarityConsoleSettings.instance.HiddenFramePrefixes };
             prefixes.tooltip = "One type-name prefix per line, for example Cysharp.Threading.Tasks. Lines starting with # are comments.";
             prefixes.style.minHeight = 54;
@@ -135,6 +143,7 @@ namespace ClarityConsole.Settings
                 radius.SetValueWithoutNotify(ClarityConsoleSettings.instance.SourcePreviewRadius);
                 hoverRadius.SetValueWithoutNotify(ClarityConsoleSettings.instance.SourceHoverRadius);
                 hideEngine.SetValueWithoutNotify(ClarityConsoleSettings.instance.HideEngineFrames);
+                hidePackages.SetValueWithoutNotify(ClarityConsoleSettings.instance.HidePackageFrames);
                 prefixes.SetValueWithoutNotify(ClarityConsoleSettings.instance.HiddenFramePrefixes);
                 UpdateStatus(status, field.value);
                 RebuildRules(rules);

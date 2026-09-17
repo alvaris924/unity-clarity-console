@@ -43,9 +43,24 @@ namespace ClarityConsole.Core
                 return TypeName.StartsWith("UnityEngine.", System.StringComparison.Ordinal)
                     || TypeName.StartsWith("ClarityConsole.Capture.", System.StringComparison.Ordinal)
                     || TypeName.StartsWith("UnityEditor.", System.StringComparison.Ordinal)
+                    || TypeName.StartsWith("Unity.", System.StringComparison.Ordinal)
                     || TypeName.StartsWith("System.", System.StringComparison.Ordinal)
                     || TypeName.StartsWith("Mono.", System.StringComparison.Ordinal)
                     || TypeName.StartsWith("NUnit.", System.StringComparison.Ordinal);
+            }
+        }
+
+        /// <summary>
+        /// True for frames compiled from an installed package: Unity keeps those sources under
+        /// <c>Library/PackageCache</c>. A project's own embedded or local packages live elsewhere and are
+        /// not affected.
+        /// </summary>
+        public bool IsPackageFrame
+        {
+            get
+            {
+                return FilePath.StartsWith("Library/PackageCache/", System.StringComparison.Ordinal)
+                    || FilePath.IndexOf("/Library/PackageCache/", System.StringComparison.Ordinal) >= 0;
             }
         }
 
