@@ -183,7 +183,7 @@ namespace ClarityConsole.Capture
                 LogEntryKind.Log,
                 SeverityMapping.FromLogType(type),
                 condition,
-                stackTrace,
+                CaptureFrameStripper.Strip(stackTrace),
                 DateTime.UtcNow,
                 _frame,
                 threadId,

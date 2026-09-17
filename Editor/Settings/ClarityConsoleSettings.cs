@@ -35,10 +35,10 @@ namespace ClarityConsole.Settings
         private int _sourceHoverRadius = DefaultSourceHoverRadius;
 
         [SerializeField]
-        private bool _hideEngineFrames = true;
+        private bool _hideEngineFrames;
 
         [SerializeField]
-        private bool _hidePackageFrames = true;
+        private bool _hidePackageFrames;
 
         [SerializeField]
         private string _hiddenFramePrefixes = string.Empty;
@@ -265,8 +265,8 @@ namespace ClarityConsole.Settings
             _watchPattern = WatchExtractor.DefaultPattern;
             _sourcePreviewRadius = SourceCache.DefaultRadius;
             _sourceHoverRadius = DefaultSourceHoverRadius;
-            _hideEngineFrames = true;
-            _hidePackageFrames = true;
+            _hideEngineFrames = false;
+            _hidePackageFrames = false;
             _hiddenFramePrefixes = string.Empty;
             _ignoreRules.Clear();
             Persist();

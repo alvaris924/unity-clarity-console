@@ -33,6 +33,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 [Unreleased]: https://github.com/alvaris924/unity-clarity-console/commits/main
 
+### Changed
+
+- Stack traces show every frame by default, as the stock console does. Folding engine frames and package frames is now opt-in in Project Settings; the exception-unfolding rule and the type-prefix rules still apply once folding is on.
+- The console's own capture frames no longer appear in stack traces: the `DebugLogHandler`, `ClarityConsole.Capture` and `CallOverridenDebugHandler` lines that wrapping Unity's log handler adds are dropped at capture, so a trace has the shape it would have without the console installed.
+
 ### Fixed
 
 - With Wrap on, clearing the console (by the button or Clear on Play) could throw `NullReferenceException` from `VerticalVirtualizationController.Setup` inside Unity's layout pass: Unity's dynamic-height list reports its first visible index as -1 once the source is empty and then sets rows up at index -1 if anything makes it cycle before the next refresh. The window now releases the rows the moment the list becomes empty instead of waiting for the debounced refresh, which closes that gap.
