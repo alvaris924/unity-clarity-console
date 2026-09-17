@@ -12,7 +12,7 @@ Fast, searchable, dependency-free Console window for the Unity Editor.
 - Clickable stack frames with de-noising and the source shown under every frame, so an error's path reads top to bottom
 - Log history that survives domain reloads and Editor restarts
 - Compiler messages in a Problems tab, session markers, log file import
-- Themes: Native follows the Editor skin; Obsidian, Paper and Sci-fi are designed looks with a monospace face
+- Themes: Native follows the Editor skin; Obsidian, Paper, Sci-fi and Ember are designed looks with a monospace face
 - Wraps long messages on demand, keeps its toolbar usable when docked in a narrow panel, and shows only what you ask for: Time and Frame columns are opt-in
 - Public Unity APIs only, UI Toolkit, zero third-party dependencies, MIT
 

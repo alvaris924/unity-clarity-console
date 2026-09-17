@@ -32,6 +32,13 @@ namespace ClarityConsole.Tests.UI
             Assert.That(ConsoleThemes.Find(id), Is.SameAs(ConsoleThemes.SciFi));
         }
 
+        [Test]
+        public void Ember_IsRegistered_AndLoads()
+        {
+            Assert.That(ConsoleThemes.Find("ember"), Is.SameAs(ConsoleThemes.Ember));
+            Assert.That(ConsoleThemes.Ember.Load(), Is.Not.Null);
+        }
+
         [TestCase("")]
         [TestCase(null)]
         [TestCase("no-such-theme")]
@@ -47,6 +54,7 @@ namespace ClarityConsole.Tests.UI
             Assert.That(UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Font>("Packages/com.alvaris.clarity-console/Editor/UI/Fonts/JetBrainsMono-Bold.ttf"), Is.Not.Null);
             Assert.That(UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Texture2D>("Packages/com.alvaris.clarity-console/Editor/UI/Themes/scanlines.png"), Is.Not.Null);
             Assert.That(UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Texture2D>("Packages/com.alvaris.clarity-console/Editor/UI/Themes/glow-frame.png"), Is.Not.Null);
+            Assert.That(UnityEditor.AssetDatabase.LoadAssetAtPath<UnityEngine.Texture2D>("Packages/com.alvaris.clarity-console/Editor/UI/Themes/ember-row-glow.png"), Is.Not.Null);
         }
     }
 }
