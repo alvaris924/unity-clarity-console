@@ -100,7 +100,7 @@ namespace ClarityConsole.Settings
             {
                 value = ClarityConsoleSettings.instance.HideEngineFrames,
             };
-            hideEngine.tooltip = "Fold frames from the engine, the Editor, the runtime and this package away from the stack, so your own code is what you see first.";
+            hideEngine.tooltip = "Fold frames from the engine, the Editor, the runtime and Unity's own packages into one row, so your own code is what you see first. Off by default: every frame shows, as in the stock console.";
             hideEngine.RegisterValueChangedCallback(evt => ClarityConsoleSettings.instance.HideEngineFrames = evt.newValue);
             root.Add(hideEngine);
 
