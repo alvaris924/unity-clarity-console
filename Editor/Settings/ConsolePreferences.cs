@@ -67,6 +67,13 @@ namespace ClarityConsole.Settings
             set => Set(nameof(InlineSource), value);
         }
 
+        /// <summary>List the "Domain reloaded" dividers. Off by default; Play mode markers always show.</summary>
+        public static bool ShowDomainReloads
+        {
+            get => Get(nameof(ShowDomainReloads), false);
+            set => Set(nameof(ShowDomainReloads), value);
+        }
+
         /// <summary>Wrap long messages in the list so rows grow instead of cutting the text off.</summary>
         public static bool WrapMessages
         {
@@ -101,6 +108,7 @@ namespace ClarityConsole.Settings
             EditorPrefs.DeleteKey(Prefix + nameof(ShowTime));
             EditorPrefs.DeleteKey(Prefix + nameof(ShowFrame));
             EditorPrefs.DeleteKey(Prefix + nameof(InlineSource));
+            EditorPrefs.DeleteKey(Prefix + nameof(ShowDomainReloads));
             EditorPrefs.DeleteKey(Prefix + nameof(WrapMessages));
             EditorPrefs.DeleteKey(Prefix + nameof(Theme));
             Changed?.Invoke();

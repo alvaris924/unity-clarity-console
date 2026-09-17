@@ -35,6 +35,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ### Changed
 
+- List rows are tighter: the severity icon column is 22 px instead of the 35 px Unity's default column minimum was forcing, so the message starts right after the icon, and the count column only appears while Collapse is on or a watch row is listed, giving the message the space up to the scrollbar the rest of the time.
+- The "Domain reloaded" divider is hidden by default, since a recompile happens many times an hour and the divider says little; File > "Show domain reloads" or the Preferences page lists it again. Editor start and Play mode markers always show.
 - Stack traces show every frame by default, as the stock console does. Folding engine frames and package frames is now opt-in in Project Settings; the exception-unfolding rule and the type-prefix rules still apply once folding is on.
 - The console's own capture frames no longer appear in stack traces: the `DebugLogHandler`, `ClarityConsole.Capture` and `CallOverridenDebugHandler` lines that wrapping Unity's log handler adds are dropped at capture, so a trace has the shape it would have without the console installed.
 

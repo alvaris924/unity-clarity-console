@@ -25,6 +25,28 @@ namespace ClarityConsole.Tests.UI
         }
 
         [Test]
+        public void DomainReloadMarkers_AreHiddenByDefault_AndShownOnRequest_WhileOtherMarkersAlwaysShow()
+        {
+            var store = new LogStore(16);
+            using (var vm = new ConsoleViewModel(store))
+            {
+                store.Append(LogEntry.Marker(LogEntry.EditorStartedMarker, DateTime.UtcNow, 0));
+                store.Append(LogEntry.Marker(LogEntry.DomainReloadMarker, DateTime.UtcNow, 0));
+                store.Append(LogEntry.Marker("Entered Play mode, session 3", DateTime.UtcNow, 0));
+                vm.Flush();
+
+                Assert.That(vm.Visible.Select(e => e.Message), Is.EqualTo(new[] { LogEntry.EditorStartedMarker, "Entered Play mode, session 3" }));
+
+                vm.ShowDomainReloads = true;
+                Assert.That(vm.Visible.Count, Is.EqualTo(3));
+                Assert.That(vm.Visible[1].IsDomainReloadMarker, Is.True);
+
+                vm.ShowDomainReloads = false;
+                Assert.That(vm.Visible.Count, Is.EqualTo(2));
+            }
+        }
+
+        [Test]
         public void SeverityFilter_HidesLogsButKeepsMarkers()
         {
             var store = new LogStore(capacity: 16);
@@ -153,15 +175,15 @@ namespace ClarityConsole.Tests.UI
             store.Append(Entry(LogSeverity.Log, "[Net] one"));
             store.Append(Entry(LogSeverity.Log, "[UI] two"));
             store.Append(Entry(LogSeverity.Log, "untagged"));
-            store.Append(LogEntry.Marker("Domain reloaded", DateTime.UtcNow, 0));
+            store.Append(LogEntry.Marker("Entered Play mode, session 1", DateTime.UtcNow, 0));
 
             model.SetChannelSelected("Net", true);
 
-            Assert.That(model.Visible.Select(e => e.Message), Is.EqualTo(new[] { "[Net] one", "Domain reloaded" }));
+            Assert.That(model.Visible.Select(e => e.Message), Is.EqualTo(new[] { "[Net] one", "Entered Play mode, session 1" }));
             Assert.That(model.IsChannelSelected("Net"), Is.True);
 
             model.SetChannelSelected("UI", true);
-            Assert.That(model.Visible.Select(e => e.Message), Is.EqualTo(new[] { "[Net] one", "[UI] two", "Domain reloaded" }));
+            Assert.That(model.Visible.Select(e => e.Message), Is.EqualTo(new[] { "[Net] one", "[UI] two", "Entered Play mode, session 1" }));
 
             model.ClearChannelSelection();
             Assert.That(model.Visible.Count, Is.EqualTo(4));
@@ -257,7 +279,7 @@ namespace ClarityConsole.Tests.UI
         {
             var store = new LogStore(capacity: 16);
             using var model = new ConsoleViewModel(store);
-            store.Append(LogEntry.Marker("Domain reloaded", DateTime.UtcNow, 0));
+            store.Append(LogEntry.Marker("Entered Play mode, session 1", DateTime.UtcNow, 0));
 
             model.IgnoreList = new IgnoreList(new[] { new IgnoreRule(IgnoreMatch.Contains, "Domain") });
 

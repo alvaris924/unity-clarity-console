@@ -62,6 +62,8 @@ namespace ClarityConsole.UI
             AddToggle(root, refreshers, "frame", "Frame", () => ConsolePreferences.ShowFrame, v => ConsolePreferences.ShowFrame = v);
 
             AddTitle(root, "Behaviour", 12);
+            AddToggle(root, refreshers, "domain-reloads", "Show domain reloads", () => ConsolePreferences.ShowDomainReloads, v => ConsolePreferences.ShowDomainReloads = v);
+            AddHelp(root, "The \"Domain reloaded\" divider after every recompile is hidden by default; Play mode and Editor start markers always show.");
             AddToggle(root, refreshers, "error-pause", "Error Pause", () => ConsolePreferences.ErrorPause, v => ConsolePreferences.ErrorPause = v);
             AddToggle(root, refreshers, "clear-on-play", "Clear on Play", () => ConsolePreferences.ClearOnPlay, v => ConsolePreferences.ClearOnPlay = v);
             AddToggle(root, refreshers, "clear-on-recompile", "Clear on Recompile", () => ConsolePreferences.ClearOnRecompile, v => ConsolePreferences.ClearOnRecompile = v);

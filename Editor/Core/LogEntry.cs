@@ -78,6 +78,15 @@ namespace ClarityConsole.Core
             return new LogEntry(LogEntryKind.Marker, LogSeverity.Log, message, string.Empty, timestampUtc, frame, 0, true, ObjectRef.None);
         }
 
+        /// <summary>The divider written after every domain reload; frequent enough to be hidden by default.</summary>
+        public const string DomainReloadMarker = "Domain reloaded";
+
+        /// <summary>The divider written when the Editor starts.</summary>
+        public const string EditorStartedMarker = "Editor started";
+
+        /// <summary>True for the "Domain reloaded" divider.</summary>
+        public bool IsDomainReloadMarker => Kind == LogEntryKind.Marker && Message == DomainReloadMarker;
+
         internal void AssignSequence(long id, int session)
         {
             Id = id;
