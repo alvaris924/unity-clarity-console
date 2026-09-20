@@ -1,5 +1,6 @@
 using System;
 using ClarityConsole.Settings;
+using ClarityConsole.Tests.Settings;
 using ClarityConsole.UI;
 using NUnit.Framework;
 using UnityEngine.UIElements;
@@ -8,24 +9,18 @@ namespace ClarityConsole.Tests.UI
 {
     internal sealed class ClarityConsolePreferencesProviderTests
     {
-        private bool _showTime;
-        private bool _wrap;
-        private string _theme;
+        private PreferenceSnapshot _snapshot;
 
         [SetUp]
         public void SetUp()
         {
-            _showTime = ConsolePreferences.ShowTime;
-            _wrap = ConsolePreferences.WrapMessages;
-            _theme = ConsolePreferences.Theme;
+            _snapshot = PreferenceSnapshot.Capture();
         }
 
         [TearDown]
         public void TearDown()
         {
-            ConsolePreferences.ShowTime = _showTime;
-            ConsolePreferences.WrapMessages = _wrap;
-            ConsolePreferences.Theme = _theme;
+            _snapshot.Restore();
         }
 
         [Test]

@@ -1,40 +1,28 @@
+using System.Collections.Generic;
+using System.Reflection;
 using ClarityConsole.Settings;
 using NUnit.Framework;
 
 namespace ClarityConsole.Tests.Settings
 {
+    /// <summary>
+    /// Every test here edits the machine-wide EditorPrefs, so the fixture puts all of them back afterwards:
+    /// a reset that leaked out of a test run used to wipe the developer's theme in every open project.
+    /// </summary>
     internal sealed class ConsolePreferencesTests
     {
-        private bool _errorPause;
-        private bool _clearOnPlay;
-        private bool _clearOnRecompile;
-        private bool _clearOnBuild;
-        private bool _wrapMessages;
-        private bool _showTime;
-        private bool _showFrame;
+        private PreferenceSnapshot _snapshot;
 
         [SetUp]
         public void SetUp()
         {
-            _errorPause = ConsolePreferences.ErrorPause;
-            _clearOnPlay = ConsolePreferences.ClearOnPlay;
-            _clearOnRecompile = ConsolePreferences.ClearOnRecompile;
-            _clearOnBuild = ConsolePreferences.ClearOnBuild;
-            _wrapMessages = ConsolePreferences.WrapMessages;
-            _showTime = ConsolePreferences.ShowTime;
-            _showFrame = ConsolePreferences.ShowFrame;
+            _snapshot = PreferenceSnapshot.Capture();
         }
 
         [TearDown]
         public void TearDown()
         {
-            ConsolePreferences.ErrorPause = _errorPause;
-            ConsolePreferences.ClearOnPlay = _clearOnPlay;
-            ConsolePreferences.ClearOnRecompile = _clearOnRecompile;
-            ConsolePreferences.ClearOnBuild = _clearOnBuild;
-            ConsolePreferences.WrapMessages = _wrapMessages;
-            ConsolePreferences.ShowTime = _showTime;
-            ConsolePreferences.ShowFrame = _showFrame;
+            _snapshot.Restore();
         }
 
         [Test]
@@ -78,70 +66,46 @@ namespace ClarityConsole.Tests.Settings
         [Test]
         public void TextSize_DefaultsTo11_Clamps_AndResets()
         {
-            int original = ConsolePreferences.TextSize;
-            try
-            {
-                ConsolePreferences.ResetToDefaults();
-                Assert.That(ConsolePreferences.TextSize, Is.EqualTo(ConsolePreferences.DefaultTextSize));
+            ConsolePreferences.ResetToDefaults();
+            Assert.That(ConsolePreferences.TextSize, Is.EqualTo(ConsolePreferences.DefaultTextSize));
 
-                ConsolePreferences.TextSize = 13;
-                Assert.That(ConsolePreferences.TextSize, Is.EqualTo(13));
+            ConsolePreferences.TextSize = 13;
+            Assert.That(ConsolePreferences.TextSize, Is.EqualTo(13));
 
-                ConsolePreferences.TextSize = 40;
-                Assert.That(ConsolePreferences.TextSize, Is.EqualTo(ConsolePreferences.MaxTextSize), "clamped to the largest size");
+            ConsolePreferences.TextSize = 40;
+            Assert.That(ConsolePreferences.TextSize, Is.EqualTo(ConsolePreferences.MaxTextSize), "clamped to the largest size");
 
-                ConsolePreferences.TextSize = 2;
-                Assert.That(ConsolePreferences.TextSize, Is.EqualTo(ConsolePreferences.MinTextSize), "clamped to the smallest size");
+            ConsolePreferences.TextSize = 2;
+            Assert.That(ConsolePreferences.TextSize, Is.EqualTo(ConsolePreferences.MinTextSize), "clamped to the smallest size");
 
-                ConsolePreferences.ResetToDefaults();
-                Assert.That(ConsolePreferences.TextSize, Is.EqualTo(ConsolePreferences.DefaultTextSize));
-            }
-            finally
-            {
-                ConsolePreferences.TextSize = original;
-            }
+            ConsolePreferences.ResetToDefaults();
+            Assert.That(ConsolePreferences.TextSize, Is.EqualTo(ConsolePreferences.DefaultTextSize));
         }
 
         [Test]
         public void ShowDomainReloads_IsOffByDefault_AndRoundTrips()
         {
-            bool original = ConsolePreferences.ShowDomainReloads;
-            try
-            {
-                ConsolePreferences.ResetToDefaults();
-                Assert.That(ConsolePreferences.ShowDomainReloads, Is.False);
+            ConsolePreferences.ResetToDefaults();
+            Assert.That(ConsolePreferences.ShowDomainReloads, Is.False);
 
-                ConsolePreferences.ShowDomainReloads = true;
-                Assert.That(ConsolePreferences.ShowDomainReloads, Is.True);
+            ConsolePreferences.ShowDomainReloads = true;
+            Assert.That(ConsolePreferences.ShowDomainReloads, Is.True);
 
-                ConsolePreferences.ResetToDefaults();
-                Assert.That(ConsolePreferences.ShowDomainReloads, Is.False);
-            }
-            finally
-            {
-                ConsolePreferences.ShowDomainReloads = original;
-            }
+            ConsolePreferences.ResetToDefaults();
+            Assert.That(ConsolePreferences.ShowDomainReloads, Is.False);
         }
 
         [Test]
         public void InlineSource_IsOnByDefault_AndRoundTrips()
         {
-            bool original = ConsolePreferences.InlineSource;
-            try
-            {
-                ConsolePreferences.ResetToDefaults();
-                Assert.That(ConsolePreferences.InlineSource, Is.True);
+            ConsolePreferences.ResetToDefaults();
+            Assert.That(ConsolePreferences.InlineSource, Is.True);
 
-                ConsolePreferences.InlineSource = false;
-                Assert.That(ConsolePreferences.InlineSource, Is.False);
+            ConsolePreferences.InlineSource = false;
+            Assert.That(ConsolePreferences.InlineSource, Is.False);
 
-                ConsolePreferences.ResetToDefaults();
-                Assert.That(ConsolePreferences.InlineSource, Is.True);
-            }
-            finally
-            {
-                ConsolePreferences.InlineSource = original;
-            }
+            ConsolePreferences.ResetToDefaults();
+            Assert.That(ConsolePreferences.InlineSource, Is.True);
         }
 
         [Test]
@@ -162,19 +126,11 @@ namespace ClarityConsole.Tests.Settings
         [Test]
         public void Theme_RoundTrips_AndResetsToEmpty()
         {
-            string original = ConsolePreferences.Theme;
-            try
-            {
-                ConsolePreferences.Theme = "scifi";
-                Assert.That(ConsolePreferences.Theme, Is.EqualTo("scifi"));
+            ConsolePreferences.Theme = "scifi";
+            Assert.That(ConsolePreferences.Theme, Is.EqualTo("scifi"));
 
-                ConsolePreferences.ResetToDefaults();
-                Assert.That(ConsolePreferences.Theme, Is.Empty);
-            }
-            finally
-            {
-                ConsolePreferences.Theme = original;
-            }
+            ConsolePreferences.ResetToDefaults();
+            Assert.That(ConsolePreferences.Theme, Is.Empty);
         }
 
         [Test]
@@ -202,6 +158,52 @@ namespace ClarityConsole.Tests.Settings
             finally
             {
                 ConsolePreferences.Changed -= OnChanged;
+            }
+        }
+
+        /// <summary>
+        /// The guard the fixture relies on: after a reset wipes the keys, restoring a snapshot brings every
+        /// preference back, the theme and text size included, not just the switches.
+        /// </summary>
+        [Test]
+        public void Snapshot_RestoresEveryPreference_AfterAReset()
+        {
+            var expected = new Dictionary<PropertyInfo, object>();
+            foreach (PropertyInfo property in PreferenceSnapshot.Properties())
+            {
+                expected[property] = OffDefault(property.GetValue(null));
+                property.SetValue(null, expected[property]);
+            }
+
+            PreferenceSnapshot changed = PreferenceSnapshot.Capture();
+            Assert.That(changed.Names, Is.SupersetOf(new[] { "Theme", "TextSize", "InlineSource", "ShowDomainReloads", "WrapMessages", "ErrorPause" }));
+
+            ConsolePreferences.ResetToDefaults();
+            Assert.That(ConsolePreferences.Theme, Is.Empty, "the reset really wiped the keys");
+            Assert.That(ConsolePreferences.TextSize, Is.EqualTo(ConsolePreferences.DefaultTextSize));
+
+            changed.Restore();
+
+            foreach (KeyValuePair<PropertyInfo, object> value in expected)
+            {
+                Assert.That(value.Key.GetValue(null), Is.EqualTo(value.Value), value.Key.Name + " came back");
+            }
+        }
+
+        private static object OffDefault(object value)
+        {
+            switch (value)
+            {
+                case bool flag:
+                    return !flag;
+                case int number:
+                    // Both inside the text-size range, so the clamp does not fold them back.
+                    return number == 12 ? 13 : 12;
+                case string text:
+                    return text == "scifi" ? "paper" : "scifi";
+                default:
+                    Assert.Fail("unexpected preference type " + value?.GetType());
+                    return value;
             }
         }
     }
