@@ -47,8 +47,13 @@ namespace ClarityConsole.UI
         private ToolbarSearchField _searchField;
         private ChannelBar _channels;
         private TimelineStrip _timeline;
+        private StyleSheet _structureSheet;
         private StyleSheet _themeSheet;
         private ConsoleTheme _theme;
+        private IVisualElementScheduledItem _sheetRetry;
+        private double _sheetRetryStarted;
+        private const long SheetRetryMs = 250;
+        private const double SheetRetryGiveUpSeconds = 120;
         private DetailView _detail;
         private readonly SourceNavigator _navigator = new SourceNavigator();
         private readonly SourceCache _sources = new SourceCache();
@@ -128,6 +133,8 @@ namespace ClarityConsole.UI
 
             ClarityConsoleSettings.Changed -= OnSettingsChanged;
             ConsolePreferences.Changed -= OnPreferencesChanged;
+            _sheetRetry?.Pause();
+            _sheetRetry = null;
             _viewModel.Changed -= OnViewChanged;
             _viewModel.Dispose();
             _viewModel = null;
@@ -139,13 +146,14 @@ namespace ClarityConsole.UI
 
             VisualElement root = rootVisualElement;
             root.AddToClassList("cc-root");
-            var styleSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>(StyleSheetPath);
-            if (styleSheet != null)
+            _structureSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>(StyleSheetPath);
+            if (_structureSheet != null)
             {
-                root.styleSheets.Add(styleSheet);
+                root.styleSheets.Add(_structureSheet);
             }
 
             ApplyTheme(ConsoleThemes.Find(ConsolePreferences.Theme));
+            EnsureStyleSheetsLoaded();
 
             root.Add(BuildToolbar());
 
@@ -898,6 +906,83 @@ namespace ClarityConsole.UI
 
             root.AddToClassList("cc-theme-" + theme.Id);
             _timeline?.MarkDirtyRepaint();
+        }
+
+        /// <summary>
+        /// The stylesheets are package assets, and a window restored with the layout while the Editor is
+        /// still importing that package gets null from the asset database. Without this the console would
+        /// come up unstyled, or in the default look instead of the chosen theme, until the next domain
+        /// reload. Retries for a couple of minutes of wall-clock time, so a long import does not exhaust
+        /// the budget, keeping the structure sheet ahead of the theme sheet so the theme keeps precedence,
+        /// and says so once if the assets never appear.
+        /// </summary>
+        private void EnsureStyleSheetsLoaded()
+        {
+            if (_structureSheet != null && _themeSheet != null)
+            {
+                return;
+            }
+
+            if (_sheetRetry == null)
+            {
+                _sheetRetryStarted = EditorApplication.timeSinceStartup;
+                _sheetRetry = rootVisualElement.schedule.Execute(RetryStyleSheets).Every(SheetRetryMs);
+            }
+        }
+
+        private void RetryStyleSheets()
+        {
+            VisualElement root = rootVisualElement;
+            bool changed = false;
+
+            if (_structureSheet == null)
+            {
+                _structureSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>(StyleSheetPath);
+                if (_structureSheet != null)
+                {
+                    // The theme sheet must stay after the structure sheet: later sheets win.
+                    if (_themeSheet != null && root.styleSheets.Contains(_themeSheet))
+                    {
+                        root.styleSheets.Remove(_themeSheet);
+                    }
+
+                    root.styleSheets.Add(_structureSheet);
+                    if (_themeSheet != null)
+                    {
+                        root.styleSheets.Add(_themeSheet);
+                    }
+
+                    changed = true;
+                }
+            }
+
+            if (_themeSheet == null && _theme != null)
+            {
+                _themeSheet = _theme.Load();
+                if (_themeSheet != null)
+                {
+                    root.styleSheets.Add(_themeSheet);
+                    changed = true;
+                }
+            }
+
+            if (changed)
+            {
+                _timeline?.MarkDirtyRepaint();
+                root.MarkDirtyRepaint();
+            }
+
+            bool done = _structureSheet != null && _themeSheet != null;
+            if (done || EditorApplication.timeSinceStartup - _sheetRetryStarted >= SheetRetryGiveUpSeconds)
+            {
+                _sheetRetry.Pause();
+                _sheetRetry = null;
+                if (!done)
+                {
+                    Debug.LogWarning("[Clarity Console] Could not load the console stylesheets from " + StyleSheetPath +
+                                     " or " + (_theme != null ? _theme.StyleSheetPath : "the theme") + "; the window is unstyled until the package reimports.");
+                }
+            }
         }
 
         private void OnSettingsChanged()
