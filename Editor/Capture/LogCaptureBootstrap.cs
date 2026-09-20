@@ -31,6 +31,8 @@ namespace ClarityConsole.Capture
             Store = new LogStore
             {
                 ChannelExtractor = new ChannelExtractor(ClarityConsoleSettings.instance.ChannelPattern),
+                TagRules = ClarityConsoleSettings.instance.CreateTagRules(),
+                AutoTagByCaller = ClarityConsoleSettings.instance.AutoTagByCaller,
                 WatchExtractor = ClarityConsoleSettings.instance.CreateWatchExtractor(),
             };
             Journal = new LogJournal(JournalDirectory);
@@ -137,7 +139,10 @@ namespace ClarityConsole.Capture
         private static void OnSettingsChanged()
         {
             Store.WatchExtractor = ClarityConsoleSettings.instance.CreateWatchExtractor();
-            Store.ReassignChannels(new ChannelExtractor(ClarityConsoleSettings.instance.ChannelPattern));
+            Store.ReassignChannels(
+                new ChannelExtractor(ClarityConsoleSettings.instance.ChannelPattern),
+                ClarityConsoleSettings.instance.CreateTagRules(),
+                ClarityConsoleSettings.instance.AutoTagByCaller);
         }
 
         private static void Shutdown()

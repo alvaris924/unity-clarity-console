@@ -183,6 +183,60 @@ namespace ClarityConsole.Tests.Core
         }
 
         [Test]
+        public void TagRules_TagMessagesWithoutAPrefix_WhilePrefixesStillWin()
+        {
+            var rules = new TagRuleSet(new[] { new TagRule("Backend", TagMatch.Contains, "PlayFab") });
+            var store = new LogStore(capacity: 8) { ChannelExtractor = new ChannelExtractor(), TagRules = rules };
+
+            store.Append(Message("PlayFab timed out"));
+            store.Append(Message("[Net] PlayFab handshake"));
+            store.Append(Message("Firebase timed out"));
+
+            Assert.That(store[0].Channel, Is.EqualTo("Backend"));
+            Assert.That(store[1].Channel, Is.EqualTo("Net"), "an explicit prefix beats a rule");
+            Assert.That(store[2].Channel, Is.Empty);
+            Assert.That(store.CountOfChannel("Backend"), Is.EqualTo(1));
+        }
+
+        [Test]
+        public void AutoTagByCaller_NamesTheCallingType_OnlyWhenNothingElseApplies()
+        {
+            const string trace = "UnityEngine.Debug:Log (object)\nGame.Boss.EnemySpawner:Activate () (at Assets/Game/EnemySpawner.cs:4)";
+            var store = new LogStore(capacity: 8)
+            {
+                ChannelExtractor = new ChannelExtractor(),
+                TagRules = new TagRuleSet(new[] { new TagRule("Backend", TagMatch.Contains, "PlayFab") }),
+                AutoTagByCaller = true,
+            };
+
+            store.Append(new LogEntry(LogEntryKind.Log, LogSeverity.Log, "Activated", trace, DateTime.UtcNow, 0, 1, true, ObjectRef.None));
+            store.Append(new LogEntry(LogEntryKind.Log, LogSeverity.Log, "PlayFab ok", trace, DateTime.UtcNow, 0, 1, true, ObjectRef.None));
+            store.Append(new LogEntry(LogEntryKind.Log, LogSeverity.Log, "[Net] hello", trace, DateTime.UtcNow, 0, 1, true, ObjectRef.None));
+            store.Append(Message("no stack at all"));
+
+            Assert.That(store[0].Channel, Is.EqualTo("EnemySpawner"));
+            Assert.That(store[1].Channel, Is.EqualTo("Backend"), "a rule beats the caller");
+            Assert.That(store[2].Channel, Is.EqualTo("Net"), "a prefix beats everything");
+            Assert.That(store[3].Channel, Is.Empty, "no caller, no tag");
+        }
+
+        [Test]
+        public void ReassignChannels_WithANewPolicy_RetagsEverything()
+        {
+            var store = new LogStore(capacity: 8) { ChannelExtractor = new ChannelExtractor() };
+            store.Append(Message("PlayFab timed out"));
+            Assert.That(store[0].Channel, Is.Empty);
+
+            store.ReassignChannels(new ChannelExtractor(), new TagRuleSet(new[] { new TagRule("Backend", TagMatch.Contains, "PlayFab") }), false);
+            Assert.That(store[0].Channel, Is.EqualTo("Backend"));
+            Assert.That(store.CountOfChannel("Backend"), Is.EqualTo(1));
+
+            store.ReassignChannels(new ChannelExtractor(), TagRuleSet.Empty, false);
+            Assert.That(store[0].Channel, Is.Empty);
+            Assert.That(store.ChannelCounts, Is.Empty);
+        }
+
+        [Test]
         public void WithoutAnExtractor_ChannelsStayEmpty()
         {
             var store = new LogStore(capacity: 8);

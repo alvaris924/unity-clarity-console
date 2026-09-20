@@ -20,6 +20,10 @@ Status legend: `idea` not started, `planned` accepted for a milestone, `in progr
 | 12 | **Frame-time spike markers**: a marker whenever a Play-mode frame exceeds a threshold | Correlates hitches with what was logged at that moment; complements the frame lens and the timeline. | Session markers, `Time.unscaledDeltaTime` sampling | Small to medium | idea |
 | 13 | **Device logs**: stream `adb logcat` and iOS device logs into the console with the same channels and filters | The first thing a mobile team asks for; deferred until the Editor-side features are complete. | Log file import's logcat parser | Large | deferred |
 
+## Shipped from this list
+
+- Manual tags (rules by text, regex or caller, "Tag as…" on a row, and caller auto-tagging): v1.0.0 scope, September 2026.
+
 ## Suggested order
 
 1, 2, 3 and 4 share the same plumbing, are one small pull request each, and together turn the console from a better list into a gameplay-debugging tool. Then 5 and 9 as quick wins, and 8 as the showpiece for screenshots and a recording.

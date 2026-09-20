@@ -48,6 +48,15 @@ namespace ClarityConsole.Core
         /// <summary>Assigns <see cref="LogEntry.Channel"/> on insert. Null leaves every channel empty.</summary>
         public ChannelExtractor ChannelExtractor { get; set; }
 
+        /// <summary>Hand-made tags, consulted for entries whose message carries no prefix.</summary>
+        public TagRuleSet TagRules { get; set; } = TagRuleSet.Empty;
+
+        /// <summary>
+        /// Whether an entry with neither a prefix nor a matching rule is tagged with the short name of
+        /// the type that logged it, so every message ends up in some channel.
+        /// </summary>
+        public bool AutoTagByCaller { get; set; }
+
         /// <summary>Assigns <see cref="LogEntry.WatchKey"/> on insert. Null leaves every key empty.</summary>
         public WatchExtractor WatchExtractor { get; set; }
 
@@ -105,7 +114,15 @@ namespace ClarityConsole.Core
         /// <summary>Swaps the extractor and recomputes every retained entry's channel.</summary>
         public void ReassignChannels(ChannelExtractor extractor)
         {
+            ReassignChannels(extractor, TagRules, AutoTagByCaller);
+        }
+
+        /// <summary>Swaps the whole channel policy and recomputes every retained entry's channel.</summary>
+        public void ReassignChannels(ChannelExtractor extractor, TagRuleSet tagRules, bool autoTagByCaller)
+        {
             ChannelExtractor = extractor;
+            TagRules = tagRules ?? TagRuleSet.Empty;
+            AutoTagByCaller = autoTagByCaller;
             _channelCounts.Clear();
 
             foreach (LogEntry entry in _entries)
@@ -151,11 +168,30 @@ namespace ClarityConsole.Core
             CountChannel(entry.Channel, 1);
         }
 
+        /// <summary>A message's own prefix first, then the hand-made rules, then the caller when asked.</summary>
         private string ChannelFor(LogEntry entry)
         {
-            return entry.Kind == LogEntryKind.Log && ChannelExtractor != null
-                ? ChannelExtractor.Extract(entry.Message)
-                : string.Empty;
+            if (entry.Kind != LogEntryKind.Log)
+            {
+                return string.Empty;
+            }
+
+            string channel = ChannelExtractor != null ? ChannelExtractor.Extract(entry.Message) : string.Empty;
+            if (channel.Length > 0)
+            {
+                return channel;
+            }
+
+            if (TagRules != null && !TagRules.IsEmpty)
+            {
+                channel = TagRules.Resolve(entry);
+                if (!string.IsNullOrEmpty(channel))
+                {
+                    return channel;
+                }
+            }
+
+            return AutoTagByCaller ? CallerFrame.TagFor(entry) : string.Empty;
         }
 
         private string WatchKeyFor(LogEntry entry)

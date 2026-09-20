@@ -19,6 +19,16 @@ namespace ClarityConsole.Settings
         public bool enabled = true;
     }
 
+    /// <summary>One serialized tag rule; a hand-made channel.</summary>
+    [Serializable]
+    internal sealed class TagRuleSetting
+    {
+        public string tag;
+        public TagMatch match;
+        public string pattern;
+        public bool enabled = true;
+    }
+
     [FilePath("ProjectSettings/ClarityConsole.asset", FilePathAttribute.Location.ProjectFolder)]
     internal sealed class ClarityConsoleSettings : ScriptableSingleton<ClarityConsoleSettings>
     {
@@ -45,6 +55,12 @@ namespace ClarityConsole.Settings
 
         [SerializeField]
         private List<IgnoreRuleSetting> _ignoreRules = new List<IgnoreRuleSetting>();
+
+        [SerializeField]
+        private List<TagRuleSetting> _tagRules = new List<TagRuleSetting>();
+
+        [SerializeField]
+        private bool _autoTagByCaller;
 
         public const int MinSourcePreviewRadius = 0;
         public const int MaxSourcePreviewRadius = 20;
@@ -241,6 +257,93 @@ namespace ClarityConsole.Settings
             Persist();
         }
 
+        /// <summary>Hand-made tags. Edit through the methods below so the change is saved.</summary>
+        public IReadOnlyList<TagRuleSetting> TagRules => _tagRules;
+
+        /// <summary>Tag entries with no prefix and no matching rule with the type that logged them.</summary>
+        public bool AutoTagByCaller
+        {
+            get => _autoTagByCaller;
+            set
+            {
+                if (_autoTagByCaller == value)
+                {
+                    return;
+                }
+
+                _autoTagByCaller = value;
+                Persist();
+            }
+        }
+
+        /// <summary>Adds a tag rule unless an identical one exists. Returns true when it was added.</summary>
+        public bool AddTagRule(string tag, TagMatch match, string pattern)
+        {
+            tag = (tag ?? string.Empty).Trim();
+            pattern = (pattern ?? string.Empty).Trim();
+            if (tag.Length == 0 || pattern.Length == 0)
+            {
+                return false;
+            }
+
+            foreach (TagRuleSetting existing in _tagRules)
+            {
+                if (existing.match == match && existing.pattern == pattern && existing.tag == tag)
+                {
+                    return false;
+                }
+            }
+
+            _tagRules.Add(new TagRuleSetting { tag = tag, match = match, pattern = pattern, enabled = true });
+            Persist();
+            return true;
+        }
+
+        public void RemoveTagRule(int index)
+        {
+            if (index < 0 || index >= _tagRules.Count)
+            {
+                return;
+            }
+
+            _tagRules.RemoveAt(index);
+            Persist();
+        }
+
+        public void SetTagRuleEnabled(int index, bool enabled)
+        {
+            if (index < 0 || index >= _tagRules.Count || _tagRules[index].enabled == enabled)
+            {
+                return;
+            }
+
+            _tagRules[index].enabled = enabled;
+            Persist();
+        }
+
+        public void ClearTagRules()
+        {
+            if (_tagRules.Count == 0)
+            {
+                return;
+            }
+
+            _tagRules.Clear();
+            Persist();
+        }
+
+        /// <summary>The tag rules these settings describe.</summary>
+        public TagRuleSet CreateTagRules()
+        {
+            var rules = new List<TagRule>(_tagRules.Count);
+            foreach (TagRuleSetting setting in _tagRules)
+            {
+                rules.Add(new TagRule(setting.tag, setting.match, setting.pattern, setting.enabled));
+            }
+
+            return new TagRuleSet(rules);
+        }
+
         /// <summary>The ignore list these settings describe.</summary>
         public IgnoreList CreateIgnoreList()
         {
@@ -269,6 +372,8 @@ namespace ClarityConsole.Settings
             _hidePackageFrames = false;
             _hiddenFramePrefixes = string.Empty;
             _ignoreRules.Clear();
+            _tagRules.Clear();
+            _autoTagByCaller = false;
             Persist();
         }
 
