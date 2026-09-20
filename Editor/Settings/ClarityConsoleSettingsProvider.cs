@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using ClarityConsole.Core;
 using UnityEditor;
@@ -118,6 +119,36 @@ namespace ClarityConsole.Settings
             prefixes.RegisterValueChangedCallback(evt => ClarityConsoleSettings.instance.HiddenFramePrefixes = evt.newValue);
             root.Add(prefixes);
 
+            var tagsTitle = new Label("Tags");
+            tagsTitle.style.unityFontStyleAndWeight = UnityEngine.FontStyle.Bold;
+            tagsTitle.style.marginTop = 12;
+            tagsTitle.style.marginBottom = 4;
+            root.Add(tagsTitle);
+
+            var tagsHelp = new Label(
+                "Messages without a [Tag] prefix can still get a channel. A rule tags messages that contain " +
+                "some text, match a regular expression, or come from a given class or file; an explicit prefix " +
+                "always wins. Right-click a row in the console for a prompt filled in from that entry.");
+            tagsHelp.style.whiteSpace = WhiteSpace.Normal;
+            tagsHelp.style.marginBottom = 4;
+            root.Add(tagsHelp);
+
+            var autoTag = new Toggle("Tag by caller when nothing else applies")
+            {
+                value = ClarityConsoleSettings.instance.AutoTagByCaller,
+            };
+            autoTag.tooltip = "Entries with no prefix and no matching rule are tagged with the short name of the class that logged them.";
+            autoTag.RegisterValueChangedCallback(evt => ClarityConsoleSettings.instance.AutoTagByCaller = evt.newValue);
+            autoTag.style.marginBottom = 6;
+            root.Add(autoTag);
+
+            var tagRules = new VisualElement();
+            tagRules.style.marginBottom = 8;
+            var tagForm = BuildTagForm(() => RebuildTagRules(tagRules));
+            root.Add(tagForm);
+            root.Add(tagRules);
+            RebuildTagRules(tagRules);
+
             var ignoreTitle = new Label("Ignored messages");
             ignoreTitle.style.unityFontStyleAndWeight = UnityEngine.FontStyle.Bold;
             ignoreTitle.style.marginTop = 12;
@@ -145,7 +176,9 @@ namespace ClarityConsole.Settings
                 hideEngine.SetValueWithoutNotify(ClarityConsoleSettings.instance.HideEngineFrames);
                 hidePackages.SetValueWithoutNotify(ClarityConsoleSettings.instance.HidePackageFrames);
                 prefixes.SetValueWithoutNotify(ClarityConsoleSettings.instance.HiddenFramePrefixes);
+                autoTag.SetValueWithoutNotify(ClarityConsoleSettings.instance.AutoTagByCaller);
                 UpdateStatus(status, field.value);
+                RebuildTagRules(tagRules);
                 RebuildRules(rules);
             })
             {
@@ -154,6 +187,137 @@ namespace ClarityConsole.Settings
             reset.style.marginTop = 8;
             reset.style.width = 140;
             root.Add(reset);
+        }
+
+        private const int FieldHeight = 20;
+
+        /// <summary>Tag name, match kind and pattern on one line, with an Add button.</summary>
+        private static VisualElement BuildTagForm(Action onAdded)
+        {
+            var form = new VisualElement();
+            form.style.flexDirection = FlexDirection.Row;
+            form.style.alignItems = Align.Center;
+            form.style.height = FieldHeight + 2;
+            form.style.marginTop = 4;
+            form.style.marginBottom = 6;
+            form.style.marginRight = 8;
+
+            // Fields in a horizontal row take their height from the row, which has none of its own, so
+            // each gets the standard line height explicitly.
+            var tag = new TextField { name = "tag-name" };
+            tag.style.width = 110;
+            tag.style.height = FieldHeight;
+            tag.tooltip = "The channel name, as it will read on the chip.";
+            SetPlaceholder(tag, "Tag");
+            form.Add(tag);
+
+            var match = new EnumField(TagMatch.Contains) { name = "tag-match" };
+            match.style.width = 90;
+            match.style.height = FieldHeight;
+            match.style.marginLeft = 4;
+            form.Add(match);
+
+            var pattern = new TextField { name = "tag-pattern" };
+            pattern.style.flexGrow = 1;
+            pattern.style.flexShrink = 1;
+            pattern.style.flexBasis = 0;
+            pattern.style.minWidth = 120;
+            pattern.style.height = FieldHeight;
+            pattern.style.marginLeft = 4;
+            pattern.tooltip = "Text the message contains, a regular expression, or a class or file name such as EnemySpawner or EnemySpawner.cs.";
+            SetPlaceholder(pattern, "Pattern");
+            form.Add(pattern);
+
+            var add = new Button(() =>
+            {
+                if (ClarityConsoleSettings.instance.AddTagRule(tag.value, (TagMatch)match.value, pattern.value))
+                {
+                    tag.SetValueWithoutNotify(string.Empty);
+                    pattern.SetValueWithoutNotify(string.Empty);
+                    onAdded();
+                }
+            })
+            {
+                text = "Add",
+                name = "tag-add",
+            };
+            add.style.marginLeft = 4;
+            add.style.flexShrink = 0;
+            add.style.height = FieldHeight;
+            add.style.minWidth = 52;
+            form.Add(add);
+            return form;
+        }
+
+        private static void SetPlaceholder(TextField field, string placeholder)
+        {
+#if UNITY_2023_1_OR_NEWER
+            field.textEdition.placeholder = placeholder;
+#else
+            field.tooltip = string.IsNullOrEmpty(field.tooltip) ? placeholder : field.tooltip;
+#endif
+        }
+
+        /// <summary>Redraws the tag rule rows.</summary>
+        private static void RebuildTagRules(VisualElement container)
+        {
+            container.Clear();
+            IReadOnlyList<TagRuleSetting> settings = ClarityConsoleSettings.instance.TagRules;
+
+            if (settings.Count == 0)
+            {
+                var none = new Label("No tags yet.");
+                none.style.color = new UnityEngine.Color(0.6f, 0.6f, 0.6f);
+                container.Add(none);
+                return;
+            }
+
+            for (int i = 0; i < settings.Count; i++)
+            {
+                int index = i;
+                TagRuleSetting setting = settings[i];
+                var rule = new TagRule(setting.tag, setting.match, setting.pattern, setting.enabled);
+
+                var row = new VisualElement();
+                row.style.flexDirection = FlexDirection.Row;
+                row.style.alignItems = Align.Center;
+                row.style.marginBottom = 2;
+
+                var enabled = new Toggle { value = setting.enabled };
+                enabled.tooltip = "Turn the tag off to drop its channel without deleting the rule.";
+                enabled.RegisterValueChangedCallback(evt =>
+                {
+                    ClarityConsoleSettings.instance.SetTagRuleEnabled(index, evt.newValue);
+                    RebuildTagRules(container);
+                });
+                row.Add(enabled);
+
+                var description = new Label(rule.Tag + "  ←  " + rule.Describe());
+                description.style.flexGrow = 1;
+                description.style.overflow = Overflow.Hidden;
+                if (rule.Error != null)
+                {
+                    description.text += "  —  " + rule.Error;
+                    description.style.color = new UnityEngine.Color(0.9f, 0.4f, 0.4f);
+                }
+                else if (!setting.enabled)
+                {
+                    description.style.color = new UnityEngine.Color(0.6f, 0.6f, 0.6f);
+                }
+
+                row.Add(description);
+
+                var remove = new Button(() =>
+                {
+                    ClarityConsoleSettings.instance.RemoveTagRule(index);
+                    RebuildTagRules(container);
+                })
+                {
+                    text = "Remove",
+                };
+                row.Add(remove);
+                container.Add(row);
+            }
         }
 
         /// <summary>Redraws the rule rows. Cheap: there are only ever a handful of rules.</summary>

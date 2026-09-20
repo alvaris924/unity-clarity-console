@@ -448,6 +448,7 @@ namespace ClarityConsole.UI
             evt.menu.AppendAction("Copy for a bug report", _ => CopyForBugReport(entry));
 
             evt.menu.AppendSeparator();
+            evt.menu.AppendAction("Tag as…", _ => TagPromptWindow.Open(entry, ShowNotice));
             evt.menu.AppendAction("Ignore this message", _ => AddIgnoreRule(IgnoreMatch.Message, entry.Message));
             if (entry.Channel.Length > 0)
             {
