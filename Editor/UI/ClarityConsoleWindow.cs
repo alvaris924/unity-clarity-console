@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using ClarityConsole.Capture;
 using ClarityConsole.Core;
 using ClarityConsole.Settings;
@@ -55,6 +56,16 @@ namespace ClarityConsole.UI
         private const long SheetRetryMs = 250;
         private const double SheetRetryGiveUpSeconds = 120;
         private DetailView _detail;
+
+        /// <summary>
+        /// The entries currently selected, in row order. Kept here rather than read back from the list
+        /// because the list resolves its selection by index, and an index means a different entry once
+        /// eviction or a filter has moved the rows under it.
+        /// </summary>
+        private readonly List<LogEntry> _selected = new List<LogEntry>();
+
+        private LogEntry _firstVisible;
+        private int _lastVisibleCount;
         private readonly SourceNavigator _navigator = new SourceNavigator();
         private readonly SourceCache _sources = new SourceCache();
         private Label _status;
@@ -146,6 +157,7 @@ namespace ClarityConsole.UI
 
             VisualElement root = rootVisualElement;
             root.AddToClassList("cc-root");
+            root.RegisterCallback<KeyDownEvent>(OnRootKeyDown, TrickleDown.TrickleDown);
             _structureSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>(StyleSheetPath);
             if (_structureSheet != null)
             {
@@ -335,7 +347,7 @@ namespace ClarityConsole.UI
             var list = new MultiColumnListView
             {
                 fixedItemHeight = RowHeightFor(ConsolePreferences.TextSize),
-                selectionType = SelectionType.Single,
+                selectionType = SelectionType.Multiple,
                 showAlternatingRowBackgrounds = AlternatingRowBackground.ContentOnly,
             };
             list.AddToClassList("cc-list");
@@ -435,6 +447,19 @@ namespace ClarityConsole.UI
                 return;
             }
 
+            List<LogEntry> selection = SelectionContaining(entry);
+            if (selection != null)
+            {
+                evt.menu.AppendAction($"Copy {selection.Count:N0} messages", _ => CopyEntries(selection, false));
+                evt.menu.AppendAction($"Copy {selection.Count:N0} messages and stacks", _ => CopyEntries(selection, true));
+                if (!IsImport)
+                {
+                    evt.menu.AppendAction($"Copy {selection.Count:N0} for a bug report", _ => CopyForBugReport(selection));
+                }
+
+                evt.menu.AppendSeparator();
+            }
+
             evt.menu.AppendAction("Copy message", _ => EditorGUIUtility.systemCopyBuffer = entry.Message);
             evt.menu.AppendAction(
                 "Copy message and stack",
@@ -447,7 +472,7 @@ namespace ClarityConsole.UI
                 return;
             }
 
-            evt.menu.AppendAction("Copy for a bug report", _ => CopyForBugReport(entry));
+            evt.menu.AppendAction("Copy for a bug report", _ => CopyForBugReport(new List<LogEntry> { entry }));
 
             evt.menu.AppendSeparator();
             evt.menu.AppendAction("Tag as…", _ => TagPromptWindow.Open(entry, ShowNotice));
@@ -489,7 +514,7 @@ namespace ClarityConsole.UI
             ShowNotice("Copied " + _viewModel.Visible.Count + " rows to the clipboard.");
         }
 
-        private void CopyForBugReport(LogEntry entry)
+        private void CopyForBugReport(IReadOnlyList<LogEntry> entries)
         {
             var options = new ExportOptions
             {
@@ -498,8 +523,53 @@ namespace ClarityConsole.UI
                 Header = ExportContext.Describe(_viewModel),
             };
 
-            EditorGUIUtility.systemCopyBuffer = LogExporter.Export(new[] { entry }, options);
-            ShowNotice("Copied the entry with its stack and this Editor's details.");
+            EditorGUIUtility.systemCopyBuffer = LogExporter.Export(entries, options);
+            ShowNotice(entries.Count == 1
+                ? "Copied the entry with its stack and this Editor's details."
+                : $"Copied {entries.Count:N0} entries with their stacks and this Editor's details.");
+        }
+
+        /// <summary>The whole selection when the row that was right-clicked belongs to it, otherwise null.</summary>
+        private List<LogEntry> SelectionContaining(LogEntry entry)
+        {
+            return _selected.Count > 1 && _selected.Contains(entry) ? new List<LogEntry>(_selected) : null;
+        }
+
+        private void CopyEntries(IReadOnlyList<LogEntry> entries, bool includeStacks)
+        {
+            EditorGUIUtility.systemCopyBuffer = BuildCopyText(entries, includeStacks);
+            ShowNotice(entries.Count == 1
+                ? "Copied the message to the clipboard."
+                : $"Copied {entries.Count:N0} messages to the clipboard.");
+        }
+
+        /// <summary>
+        /// The clipboard text for a run of entries: the messages in row order, each followed by its stack
+        /// when asked for, separated by a blank line. The same shape as copying one entry, repeated.
+        /// </summary>
+        internal static string BuildCopyText(IReadOnlyList<LogEntry> entries, bool includeStacks)
+        {
+            var builder = new StringBuilder();
+            foreach (LogEntry entry in entries)
+            {
+                if (entry == null)
+                {
+                    continue;
+                }
+
+                if (builder.Length > 0)
+                {
+                    builder.Append(Environment.NewLine).Append(Environment.NewLine);
+                }
+
+                builder.Append(entry.Message);
+                if (includeStacks && entry.StackTrace.Length > 0)
+                {
+                    builder.Append(Environment.NewLine).Append(Environment.NewLine).Append(entry.StackTrace);
+                }
+            }
+
+            return builder.ToString();
         }
 
         private string Export(ExportFormat format)
@@ -558,12 +628,68 @@ namespace ClarityConsole.UI
 
         private void OnSelectionChanged(IEnumerable<object> selection)
         {
-            LogEntry entry = FirstEntry(selection);
+            _selected.Clear();
+            foreach (object item in selection)
+            {
+                if (item is LogEntry selectedEntry)
+                {
+                    _selected.Add(selectedEntry);
+                }
+            }
+
+            LogEntry entry = _selected.Count > 0 ? _selected[0] : null;
             _detail.Show(entry);
             if (entry != null)
             {
                 SourceNavigator.Ping(entry.Context);
             }
+
+            UpdateStatus();
+        }
+
+        /// <summary>Selects every row currently shown. Ctrl+A does this; so does the list itself when it has focus.</summary>
+        private void SelectAllRows()
+        {
+            if (_list == null || _viewModel == null || _viewModel.Visible.Count == 0)
+            {
+                return;
+            }
+
+            var all = new List<int>(_viewModel.Visible.Count);
+            for (int i = 0; i < _viewModel.Visible.Count; i++)
+            {
+                all.Add(i);
+            }
+
+            _list.SetSelection(all);
+        }
+
+        /// <summary>
+        /// Ctrl+A selects every row and Ctrl+C copies the selection, unless the keystroke belongs to a text
+        /// field, where the same shortcuts mean select-all and copy for the text.
+        /// </summary>
+        private void OnRootKeyDown(KeyDownEvent evt)
+        {
+            if (!evt.actionKey || IsTextEditing(evt.target as VisualElement))
+            {
+                return;
+            }
+
+            if (evt.keyCode == KeyCode.A)
+            {
+                SelectAllRows();
+                evt.StopPropagation();
+            }
+            else if (evt.keyCode == KeyCode.C && _selected.Count > 0)
+            {
+                CopyEntries(new List<LogEntry>(_selected), false);
+                evt.StopPropagation();
+            }
+        }
+
+        private static bool IsTextEditing(VisualElement target)
+        {
+            return target != null && (target is ITextEdition || target.GetFirstAncestorOfType<TextField>() != null);
         }
 
         private void OnItemsChosen(IEnumerable<object> chosen)
@@ -1014,7 +1140,7 @@ namespace ClarityConsole.UI
             _detail.FrameFilter = ClarityConsoleSettings.instance.CreateFrameFilter();
             _viewModel.IgnoreList = ClarityConsoleSettings.instance.CreateIgnoreList();
             _sources.Clear();
-            _detail.Show(FirstEntry(_list.selectedItems));
+            _detail.Show(_selected.Count > 0 ? _selected[0] : null);
         }
 
         private void OnViewChanged(ViewChange change)
@@ -1092,24 +1218,102 @@ namespace ClarityConsole.UI
         /// an entry that is no longer on screen. The entry follows its row when it moved, and the pane
         /// empties, preview and all, when the entry is gone.
         /// </summary>
+        /// <summary>
+        /// Points the list's selection at the entries that are selected, wherever they moved to. Appending
+        /// entries never moves the rows already there, which is what happens while logs stream in, so the
+        /// remap only runs when the visible list changed some other way: a filter, a collapse, or eviction
+        /// from the front.
+        /// </summary>
         private void SyncDetailWithList()
         {
-            LogEntry shown = _detail.Entry;
-            if (shown == null)
+            IReadOnlyList<LogEntry> visible = _viewModel.Visible;
+            LogEntry first = visible.Count > 0 ? visible[0] : null;
+            bool rowsMoved = visible.Count < _lastVisibleCount || !ReferenceEquals(first, _firstVisible);
+            _lastVisibleCount = visible.Count;
+            _firstVisible = first;
+
+            if (_selected.Count == 0)
+            {
+                if (_detail.Entry != null)
+                {
+                    _detail.Show(null);
+                }
+
+                return;
+            }
+
+            if (!rowsMoved)
             {
                 return;
             }
 
-            int index = _viewModel.Visible.IndexOf(shown);
-            if (index < 0)
+            List<int> indices = IndicesOf(_selected, visible);
+            if (indices.Count == 0)
             {
+                _selected.Clear();
                 _list.ClearSelection();
                 _detail.Show(null);
+                return;
             }
-            else if (_list.selectedIndex != index)
+
+            if (indices.Count != _selected.Count)
             {
-                _list.SetSelectionWithoutNotify(new[] { index });
+                // Some of the selection was filtered away or evicted; keep the rest.
+                var remaining = new List<LogEntry>(indices.Count);
+                foreach (int index in indices)
+                {
+                    remaining.Add(visible[index]);
+                }
+
+                _selected.Clear();
+                _selected.AddRange(remaining);
             }
+
+            _list.SetSelectionWithoutNotify(indices);
+            if (!_selected.Contains(_detail.Entry))
+            {
+                _detail.Show(_selected[0]);
+            }
+        }
+
+        /// <summary>Row indices of the given entries, in row order, skipping the ones no longer shown.</summary>
+        private static List<int> IndicesOf(List<LogEntry> entries, IReadOnlyList<LogEntry> visible)
+        {
+            var indices = new List<int>(entries.Count);
+            if (entries.Count == 1)
+            {
+                int only = IndexOf(visible, entries[0]);
+                if (only >= 0)
+                {
+                    indices.Add(only);
+                }
+
+                return indices;
+            }
+
+            var wanted = new HashSet<LogEntry>(entries);
+            for (int i = 0; i < visible.Count; i++)
+            {
+                if (wanted.Contains(visible[i]))
+                {
+                    indices.Add(i);
+                }
+            }
+
+            return indices;
+        }
+
+        private static int IndexOf(IReadOnlyList<LogEntry> visible, LogEntry entry)
+        {
+            for (int i = 0; i < visible.Count; i++)
+            {
+                if (ReferenceEquals(visible[i], entry))
+                {
+                    return i;
+                }
+            }
+
+            return -1;
         }
 
         private void ScheduleSearch()
@@ -1199,13 +1403,13 @@ namespace ClarityConsole.UI
             LogStore store = _viewModel.Store;
             if (IsImport)
             {
-                _status.text = $"{Path.GetFileName(_importedPath)}   ·   {store.Count:N0} entries   ·   {_viewModel.Visible.Count:N0} shown   ·   imported as {new LogFileImport(ImportedFormat, Array.Empty<LogEntry>()).Describe()}";
+                _status.text = $"{Path.GetFileName(_importedPath)}   ·   {store.Count:N0} entries   ·   {_viewModel.Visible.Count:N0} shown{SelectedSuffix()}   ·   imported as {new LogFileImport(ImportedFormat, Array.Empty<LogEntry>()).Describe()}";
                 return;
             }
 
             double journalMb = LogCaptureBootstrap.Journal.SizeBytes / (1024.0 * 1024.0);
             string ignored = _viewModel.IgnoredCount > 0 ? $"   ·   {_viewModel.IgnoredCount:N0} ignored" : string.Empty;
-            _status.text = $"{store.Count:N0} of {store.Capacity:N0} entries   ·   {_viewModel.Visible.Count:N0} shown{ignored}   ·   session {store.CurrentSession}   ·   journal {journalMb:0.0} MB";
+            _status.text = $"{store.Count:N0} of {store.Capacity:N0} entries   ·   {_viewModel.Visible.Count:N0} shown{ignored}{SelectedSuffix()}   ·   session {store.CurrentSession}   ·   journal {journalMb:0.0} MB";
         }
 
         private void LoadIcons()
@@ -1228,6 +1432,11 @@ namespace ClarityConsole.UI
                 default:
                     return _logIcon;
             }
+        }
+
+        private string SelectedSuffix()
+        {
+            return _selected.Count > 1 ? $"   ·   {_selected.Count:N0} selected" : string.Empty;
         }
 
         private static string FirstLine(string message)

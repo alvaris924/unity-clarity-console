@@ -1,4 +1,6 @@
+using System;
 using ClarityConsole.Capture;
+using ClarityConsole.Core;
 using ClarityConsole.UI;
 using NUnit.Framework;
 using UnityEditor;
@@ -9,6 +11,28 @@ namespace ClarityConsole.Tests.UI
 {
     internal sealed class ClarityConsoleWindowTests
     {
+        [Test]
+        public void BuildCopyText_JoinsTheSelection_WithStacksOnRequest()
+        {
+            LogEntry first = Entry("first", "Game.A:Run ()");
+            LogEntry second = Entry("second", string.Empty);
+            var selection = new[] { first, second };
+
+            string plain = ClarityConsoleWindow.BuildCopyText(selection, false);
+            string withStacks = ClarityConsoleWindow.BuildCopyText(selection, true);
+
+            string gap = Environment.NewLine + Environment.NewLine;
+            Assert.That(plain, Is.EqualTo("first" + gap + "second"));
+            Assert.That(withStacks, Is.EqualTo("first" + gap + "Game.A:Run ()" + gap + "second"), "an entry without a stack adds nothing");
+            Assert.That(ClarityConsoleWindow.BuildCopyText(new[] { first }, false), Is.EqualTo("first"), "one entry copies exactly as it did before");
+            Assert.That(ClarityConsoleWindow.BuildCopyText(Array.Empty<LogEntry>(), true), Is.Empty);
+        }
+
+        private static LogEntry Entry(string message, string stackTrace)
+        {
+            return new LogEntry(LogEntryKind.Log, LogSeverity.Log, message, stackTrace, DateTime.UtcNow, 0, 1, true, ObjectRef.None);
+        }
+
         [Test]
         public void MessageCellText_ShowsTheFirstLineFixed_AndTheWholeMessageWrapped()
         {
