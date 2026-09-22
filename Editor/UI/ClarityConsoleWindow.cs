@@ -544,7 +544,7 @@ namespace ClarityConsole.UI
             LogEntry entry = _viewModel.Visible[index];
             var label = (Label)cell;
             label.userData = entry;
-            label.text = FirstLine(entry.Message);
+            label.text = MessageCellText(entry.Message, _wrap);
             label.EnableInClassList("cc-marker", entry.Kind == LogEntryKind.Marker);
             label.EnableInClassList("cc-msg-warning", entry.Kind == LogEntryKind.Log && entry.Severity == LogSeverity.Warning);
             label.EnableInClassList("cc-msg-error", entry.Kind == LogEntryKind.Log && entry.Severity >= LogSeverity.Error);
@@ -872,12 +872,22 @@ namespace ClarityConsole.UI
         private const string WrapClass = "cc-wrap";
 
         /// <summary>
+        /// A wrapped row shows the whole message, every line of it, up to this many characters; past that
+        /// the row says how much more there is, because a row thousands of lines tall helps nobody and
+        /// the detail pane has it all anyway.
+        /// </summary>
+        internal const int MaxWrappedChars = 20000;
+
+        private bool _wrap;
+
+        /// <summary>
         /// Switches the list between fixed-height rows, the cheap default, and rows that grow to fit a
         /// wrapped message. The stylesheet does the wrapping through the root class; the list only has
         /// to measure rows instead of assuming their height.
         /// </summary>
         private void ApplyWrap(bool wrap)
         {
+            _wrap = wrap;
             rootVisualElement.EnableInClassList(WrapClass, wrap);
             if (_list == null)
             {
@@ -1224,6 +1234,32 @@ namespace ClarityConsole.UI
         {
             int newline = message.IndexOf('\n');
             return newline < 0 ? message : message.Substring(0, newline).TrimEnd('\r');
+        }
+
+        /// <summary>
+        /// What the message cell shows: the first line in fixed-height rows, and in wrap mode the whole
+        /// message with its line breaks, clipped only past <see cref="MaxWrappedChars"/>.
+        /// </summary>
+        internal static string MessageCellText(string message, bool wrap)
+        {
+            if (message == null)
+            {
+                return string.Empty;
+            }
+
+            if (!wrap)
+            {
+                return FirstLine(message);
+            }
+
+            string text = message.TrimEnd('\r', '\n', ' ', '\t');
+            if (text.Length <= MaxWrappedChars)
+            {
+                return text;
+            }
+
+            int rest = text.Length - MaxWrappedChars;
+            return text.Substring(0, MaxWrappedChars) + "\n… " + rest.ToString("N0", System.Globalization.CultureInfo.InvariantCulture) + " more characters; the whole message is in the detail pane.";
         }
     }
 }

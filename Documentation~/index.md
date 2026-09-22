@@ -70,7 +70,7 @@ Selecting an entry lists its stack frames, without the console's own capture fra
 
 ## Reading in a narrow panel
 
-The Wrap toggle in the toolbar wraps long messages instead of cutting them off, and rows grow to fit, up to about six lines; the full text is always in the detail pane. The severity icon, time and frame stay aligned with the first line, and stack frames wrap as well. Wrap is a per-user preference, off by default, because fixed-height rows are cheaper and most messages fit on one line in a wide window. When the window is too narrow for the toolbar, the search field and the severity toggles move to a second line together rather than being clipped on the right.
+The Wrap toggle in the toolbar wraps long messages instead of cutting them off, and rows grow to fit the whole message, line breaks included; only a message past 20,000 characters is clipped in the row, with a note saying how much more the detail pane holds. The severity icon, time and frame stay aligned with the first line, and stack frames wrap as well. Wrap is a per-user preference, off by default, because fixed-height rows are cheaper and most messages fit on one line in a wide window. When the window is too narrow for the toolbar, the search field and the severity toggles move to a second line together rather than being clipped on the right.
 
 The Time and Frame columns are off by default for the same reason: in a docked panel they left little room for the message. Right-click the list header, use File > Columns, or open the Preferences page to show them; the choice is remembered per user and applies to every console window.
 
