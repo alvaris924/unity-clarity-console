@@ -67,8 +67,57 @@ namespace ClarityConsole.Tests.UI
 
             bar.Refresh(Counts(), _ => false);
 
-            Assert.That(bar.childCount, Is.EqualTo(0));
+            Assert.That(bar.ChipRow.childCount, Is.EqualTo(0));
             Assert.That(bar.style.display.value, Is.EqualTo(DisplayStyle.None));
+        }
+
+        [Test]
+        public void Visible_Off_HidesTheBar_EvenWithChannels()
+        {
+            var bar = new ChannelBar();
+            bar.Refresh(Counts(("Net", 1)), _ => false);
+
+            bar.Visible = false;
+            Assert.That(bar.style.display.value, Is.EqualTo(DisplayStyle.None));
+
+            bar.Refresh(Counts(("Net", 2)), _ => false);
+            Assert.That(bar.style.display.value, Is.EqualTo(DisplayStyle.None), "a refresh does not bring a hidden bar back");
+
+            bar.Visible = true;
+            Assert.That(bar.style.display.value, Is.EqualTo(DisplayStyle.Flex));
+        }
+
+        [Test]
+        public void Height_SizesToTheChipsUntilDragged_AndClamps()
+        {
+            var bar = new ChannelBar();
+
+            Assert.That(bar.HeightOverride, Is.EqualTo(0));
+            Assert.That(bar.style.height.keyword, Is.EqualTo(StyleKeyword.Auto));
+            Assert.That(bar.style.maxHeight.value.value, Is.EqualTo(ChannelBar.AutoMaxHeight));
+
+            bar.HeightOverride = 120;
+            Assert.That(bar.style.height.value.value, Is.EqualTo(120f));
+            Assert.That(bar.style.maxHeight.keyword, Is.EqualTo(StyleKeyword.None));
+
+            bar.HeightOverride = 5;
+            Assert.That(bar.HeightOverride, Is.EqualTo(ChannelBar.MinHeight), "too small clamps to one row");
+            bar.HeightOverride = 9999;
+            Assert.That(bar.HeightOverride, Is.EqualTo(ChannelBar.MaxHeight));
+
+            bar.HeightOverride = 0;
+            Assert.That(bar.style.height.keyword, Is.EqualTo(StyleKeyword.Auto), "zero hands the sizing back");
+            Assert.That(bar.Handle, Is.Not.Null);
+            Assert.That(bar.Handle.ClassListContains(ChannelBar.HandleClass), Is.True);
+        }
+
+        [Test]
+        public void DraggedHeight_FollowsThePointer_WithinTheLimits()
+        {
+            Assert.That(ChannelBar.DraggedHeight(60, 40), Is.EqualTo(100));
+            Assert.That(ChannelBar.DraggedHeight(60, -100), Is.EqualTo(ChannelBar.MinHeight));
+            Assert.That(ChannelBar.DraggedHeight(60, 10000), Is.EqualTo(ChannelBar.MaxHeight));
+            Assert.That(ChannelBar.DraggedHeight(60.4f, 0), Is.EqualTo(60));
         }
 
         [Test]
@@ -76,13 +125,13 @@ namespace ClarityConsole.Tests.UI
         {
             var bar = new ChannelBar();
             bar.Refresh(Counts(("Net", 1)), _ => false);
-            VisualElement first = bar[0];
+            VisualElement first = bar.ChipRow[0];
 
             bar.Refresh(Counts(("Net", 1)), _ => false);
-            Assert.That(bar[0], Is.SameAs(first), "an unchanged refresh must not rebuild");
+            Assert.That(bar.ChipRow[0], Is.SameAs(first), "an unchanged refresh must not rebuild");
 
             bar.Refresh(Counts(("Net", 2)), _ => false);
-            Assert.That(bar[0], Is.Not.SameAs(first), "a changed count rebuilds");
+            Assert.That(bar.ChipRow[0], Is.Not.SameAs(first), "a changed count rebuilds");
         }
 
         [Test]

@@ -75,6 +75,40 @@ namespace ClarityConsole.Settings
             set => Set(nameof(ShowDomainReloads), value);
         }
 
+        /// <summary>Show the row of channel chips under the toolbar.</summary>
+        public static bool ShowChannels
+        {
+            get => Get(nameof(ShowChannels), true);
+            set => Set(nameof(ShowChannels), value);
+        }
+
+        public const int MinChannelBarHeight = 22;
+        public const int MaxChannelBarHeight = 400;
+
+        /// <summary>
+        /// Height in pixels the chip bar was dragged to. Zero, the default, lets the bar size itself to its
+        /// chips up to a few rows.
+        /// </summary>
+        public static int ChannelBarHeight
+        {
+            get
+            {
+                int stored = EditorPrefs.GetInt(Prefix + nameof(ChannelBarHeight), 0);
+                return stored <= 0 ? 0 : Mathf.Clamp(stored, MinChannelBarHeight, MaxChannelBarHeight);
+            }
+            set
+            {
+                int clamped = value <= 0 ? 0 : Mathf.Clamp(value, MinChannelBarHeight, MaxChannelBarHeight);
+                if (ChannelBarHeight == clamped)
+                {
+                    return;
+                }
+
+                EditorPrefs.SetInt(Prefix + nameof(ChannelBarHeight), clamped);
+                Changed?.Invoke();
+            }
+        }
+
         public const int MinTextSize = 8;
         public const int MaxTextSize = 16;
         public const int DefaultTextSize = 11;
@@ -134,6 +168,8 @@ namespace ClarityConsole.Settings
             EditorPrefs.DeleteKey(Prefix + nameof(ShowFrame));
             EditorPrefs.DeleteKey(Prefix + nameof(InlineSource));
             EditorPrefs.DeleteKey(Prefix + nameof(ShowDomainReloads));
+            EditorPrefs.DeleteKey(Prefix + nameof(ShowChannels));
+            EditorPrefs.DeleteKey(Prefix + nameof(ChannelBarHeight));
             EditorPrefs.DeleteKey(Prefix + nameof(TextSize));
             EditorPrefs.DeleteKey(Prefix + nameof(WrapMessages));
             EditorPrefs.DeleteKey(Prefix + nameof(Theme));

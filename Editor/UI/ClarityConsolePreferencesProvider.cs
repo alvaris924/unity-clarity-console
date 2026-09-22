@@ -64,6 +64,8 @@ namespace ClarityConsole.UI
             root.Add(textSize);
 
             AddToggle(root, refreshers, "wrap", "Wrap long messages", () => ConsolePreferences.WrapMessages, v => ConsolePreferences.WrapMessages = v);
+            AddToggle(root, refreshers, "chips", "Channel chips", () => ConsolePreferences.ShowChannels, v => ConsolePreferences.ShowChannels = v);
+            AddHelp(root, "The row of channel chips under the toolbar. Drag its bottom edge in the console to give the chips more or less room; double-click the edge to size it to the chips again.");
             AddToggle(root, refreshers, "inline-source", "Source under every frame", () => ConsolePreferences.InlineSource, v => ConsolePreferences.InlineSource = v);
             AddHelp(root, "On, the detail pane shows a few lines of code under each stack frame in order, so the path an error took reads top to bottom. Off, one preview follows the frame you click.");
 

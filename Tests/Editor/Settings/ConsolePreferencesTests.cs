@@ -124,6 +124,29 @@ namespace ClarityConsole.Tests.Settings
         }
 
         [Test]
+        public void ChannelChips_ShowByDefault_AndTheBarHeightClamps()
+        {
+            ConsolePreferences.ResetToDefaults();
+            Assert.That(ConsolePreferences.ShowChannels, Is.True);
+            Assert.That(ConsolePreferences.ChannelBarHeight, Is.EqualTo(0), "zero means the bar sizes to its chips");
+
+            ConsolePreferences.ShowChannels = false;
+            Assert.That(ConsolePreferences.ShowChannels, Is.False);
+
+            ConsolePreferences.ChannelBarHeight = 150;
+            Assert.That(ConsolePreferences.ChannelBarHeight, Is.EqualTo(150));
+            ConsolePreferences.ChannelBarHeight = 3;
+            Assert.That(ConsolePreferences.ChannelBarHeight, Is.EqualTo(ConsolePreferences.MinChannelBarHeight));
+            ConsolePreferences.ChannelBarHeight = 5000;
+            Assert.That(ConsolePreferences.ChannelBarHeight, Is.EqualTo(ConsolePreferences.MaxChannelBarHeight));
+            ConsolePreferences.ChannelBarHeight = 0;
+            Assert.That(ConsolePreferences.ChannelBarHeight, Is.EqualTo(0));
+
+            ConsolePreferences.ResetToDefaults();
+            Assert.That(ConsolePreferences.ShowChannels, Is.True);
+        }
+
+        [Test]
         public void Theme_RoundTrips_AndResetsToEmpty()
         {
             ConsolePreferences.Theme = "scifi";
@@ -171,12 +194,12 @@ namespace ClarityConsole.Tests.Settings
             var expected = new Dictionary<PropertyInfo, object>();
             foreach (PropertyInfo property in PreferenceSnapshot.Properties())
             {
-                expected[property] = OffDefault(property.GetValue(null));
+                expected[property] = OffDefault(property.Name, property.GetValue(null));
                 property.SetValue(null, expected[property]);
             }
 
             PreferenceSnapshot changed = PreferenceSnapshot.Capture();
-            Assert.That(changed.Names, Is.SupersetOf(new[] { "Theme", "TextSize", "InlineSource", "ShowDomainReloads", "WrapMessages", "ErrorPause" }));
+            Assert.That(changed.Names, Is.SupersetOf(new[] { "Theme", "TextSize", "InlineSource", "ShowDomainReloads", "WrapMessages", "ErrorPause", "ShowChannels", "ChannelBarHeight" }));
 
             ConsolePreferences.ResetToDefaults();
             Assert.That(ConsolePreferences.Theme, Is.Empty, "the reset really wiped the keys");
@@ -190,14 +213,17 @@ namespace ClarityConsole.Tests.Settings
             }
         }
 
-        private static object OffDefault(object value)
+        private static object OffDefault(string name, object value)
         {
             switch (value)
             {
                 case bool flag:
                     return !flag;
+                case int number when name == nameof(ConsolePreferences.ChannelBarHeight):
+                    // Inside the chip-bar range, so the clamp does not fold them back.
+                    return number == 30 ? 31 : 30;
                 case int number:
-                    // Both inside the text-size range, so the clamp does not fold them back.
+                    // Inside the text-size range, likewise.
                     return number == 12 ? 13 : 12;
                 case string text:
                     return text == "scifi" ? "paper" : "scifi";
