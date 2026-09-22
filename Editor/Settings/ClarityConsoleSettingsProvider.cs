@@ -22,16 +22,27 @@ namespace ClarityConsole.Settings
             };
         }
 
-        private static void Build(VisualElement root)
+        /// <summary>
+        /// Builds the page. The settings window gives providers a plain container and does not scroll it, so
+        /// the content goes into a ScrollView of its own: a page taller than the window used to lose its tail,
+        /// the Tags section first of all. Internal for the tests.
+        /// </summary>
+        internal static void Build(VisualElement root)
         {
-            root.style.paddingLeft = 10;
-            root.style.paddingRight = 10;
-            root.style.paddingTop = 8;
+            root.style.flexGrow = 1;
+            var scroll = new ScrollView(ScrollViewMode.Vertical) { name = "page", horizontalScrollerVisibility = ScrollerVisibility.Hidden };
+            scroll.style.flexGrow = 1;
+            root.Add(scroll);
+            VisualElement page = scroll.contentContainer;
+            page.style.paddingLeft = 10;
+            page.style.paddingRight = 10;
+            page.style.paddingTop = 8;
+            page.style.paddingBottom = 12;
 
             var title = new Label("Channels");
             title.style.unityFontStyleAndWeight = UnityEngine.FontStyle.Bold;
             title.style.marginBottom = 4;
-            root.Add(title);
+            page.Add(title);
 
             var help = new Label(
                 "Messages that start with a tag are grouped into channels you can filter by. " +
@@ -39,7 +50,7 @@ namespace ClarityConsole.Settings
                 " characters of a message are examined.");
             help.style.whiteSpace = WhiteSpace.Normal;
             help.style.marginBottom = 6;
-            root.Add(help);
+            page.Add(help);
 
             var status = new Label();
             status.style.whiteSpace = WhiteSpace.Normal;
@@ -51,79 +62,15 @@ namespace ClarityConsole.Settings
                 ClarityConsoleSettings.instance.ChannelPattern = evt.newValue;
                 UpdateStatus(status, evt.newValue);
             });
-            root.Add(field);
-            root.Add(status);
+            page.Add(field);
+            page.Add(status);
             UpdateStatus(status, field.value);
-
-            var watchTitle = new Label("Watch rows");
-            watchTitle.style.unityFontStyleAndWeight = UnityEngine.FontStyle.Bold;
-            watchTitle.style.marginTop = 12;
-            watchTitle.style.marginBottom = 4;
-            root.Add(watchTitle);
-
-            var watchHelp = new Label(
-                "Messages that start with a watch key, " + WatchExample + " by default, replace each other " +
-                "in the window instead of piling up, so a value you log every frame reads as one line that " +
-                "changes. Leave the pattern empty to turn this off.");
-            watchHelp.style.whiteSpace = WhiteSpace.Normal;
-            watchHelp.style.marginBottom = 4;
-            root.Add(watchHelp);
-
-            var watch = new TextField("Watch pattern") { value = ClarityConsoleSettings.instance.WatchPattern };
-            watch.RegisterValueChangedCallback(evt => ClarityConsoleSettings.instance.WatchPattern = evt.newValue);
-            root.Add(watch);
-
-            var frames = new Label("Stack frames");
-            frames.style.unityFontStyleAndWeight = UnityEngine.FontStyle.Bold;
-            frames.style.marginTop = 12;
-            frames.style.marginBottom = 4;
-            root.Add(frames);
-
-            var radius = new SliderInt("Preview lines", ClarityConsoleSettings.MinSourcePreviewRadius, ClarityConsoleSettings.MaxSourcePreviewRadius)
-            {
-                value = ClarityConsoleSettings.instance.SourcePreviewRadius,
-                showInputField = true,
-            };
-            radius.tooltip = "Lines of source shown on each side of the line a stack frame points at. Zero shows only that line.";
-            radius.RegisterValueChangedCallback(evt => ClarityConsoleSettings.instance.SourcePreviewRadius = evt.newValue);
-            root.Add(radius);
-
-            var hoverRadius = new SliderInt("Hover card lines", ClarityConsoleSettings.MinSourcePreviewRadius, ClarityConsoleSettings.MaxSourceHoverRadius)
-            {
-                value = ClarityConsoleSettings.instance.SourceHoverRadius,
-                showInputField = true,
-            };
-            hoverRadius.tooltip = "Lines of source shown on each side of the frame's line in the card that appears while the pointer rests on a frame or its source block.";
-            hoverRadius.RegisterValueChangedCallback(evt => ClarityConsoleSettings.instance.SourceHoverRadius = evt.newValue);
-            root.Add(hoverRadius);
-
-            var hideEngine = new Toggle("Fold engine frames")
-            {
-                value = ClarityConsoleSettings.instance.HideEngineFrames,
-            };
-            hideEngine.tooltip = "Fold frames from the engine, the Editor, the runtime and Unity's own packages into one row, so your own code is what you see first. Off by default: every frame shows, as in the stock console.";
-            hideEngine.RegisterValueChangedCallback(evt => ClarityConsoleSettings.instance.HideEngineFrames = evt.newValue);
-            root.Add(hideEngine);
-
-            var hidePackages = new Toggle("Fold package frames")
-            {
-                value = ClarityConsoleSettings.instance.HidePackageFrames,
-            };
-            hidePackages.tooltip = "Fold frames compiled from installed packages, the ones under Library/PackageCache, such as a package's own logging path. Your embedded and local packages are not affected.";
-            hidePackages.RegisterValueChangedCallback(evt => ClarityConsoleSettings.instance.HidePackageFrames = evt.newValue);
-            root.Add(hidePackages);
-
-            var prefixes = new TextField("Also fold types starting with") { multiline = true, value = ClarityConsoleSettings.instance.HiddenFramePrefixes };
-            prefixes.tooltip = "One type-name prefix per line, for example Cysharp.Threading.Tasks. Lines starting with # are comments.";
-            prefixes.style.minHeight = 54;
-            prefixes.RegisterValueChangedCallback(evt => ClarityConsoleSettings.instance.HiddenFramePrefixes = evt.newValue);
-            root.Add(prefixes);
 
             var tagsTitle = new Label("Tags");
             tagsTitle.style.unityFontStyleAndWeight = UnityEngine.FontStyle.Bold;
             tagsTitle.style.marginTop = 12;
             tagsTitle.style.marginBottom = 4;
-            root.Add(tagsTitle);
+            page.Add(tagsTitle);
 
             var tagsHelp = new Label(
                 "Messages without a [Tag] prefix can still get a channel. A rule tags messages that contain " +
@@ -131,7 +78,7 @@ namespace ClarityConsole.Settings
                 "always wins. Right-click a row in the console for a prompt filled in from that entry.");
             tagsHelp.style.whiteSpace = WhiteSpace.Normal;
             tagsHelp.style.marginBottom = 4;
-            root.Add(tagsHelp);
+            page.Add(tagsHelp);
 
             var autoTag = new Toggle("Tag by caller when nothing else applies")
             {
@@ -140,31 +87,105 @@ namespace ClarityConsole.Settings
             autoTag.tooltip = "Entries with no prefix and no matching rule are tagged with the short name of the class that logged them.";
             autoTag.RegisterValueChangedCallback(evt => ClarityConsoleSettings.instance.AutoTagByCaller = evt.newValue);
             autoTag.style.marginBottom = 6;
-            root.Add(autoTag);
+            page.Add(autoTag);
 
             var tagRules = new VisualElement();
             tagRules.style.marginBottom = 8;
             var tagForm = BuildTagForm(() => RebuildTagRules(tagRules));
-            root.Add(tagForm);
-            root.Add(tagRules);
+            page.Add(tagForm);
+            page.Add(tagRules);
             RebuildTagRules(tagRules);
+
+            var watchTitle = new Label("Watch rows");
+            watchTitle.style.unityFontStyleAndWeight = UnityEngine.FontStyle.Bold;
+            watchTitle.style.marginTop = 12;
+            watchTitle.style.marginBottom = 4;
+            page.Add(watchTitle);
+
+            var watchHelp = new Label(
+                "Messages that start with a watch key, " + WatchExample + " by default, replace each other " +
+                "in the window instead of piling up, so a value you log every frame reads as one line that " +
+                "changes. Leave the pattern empty to turn this off.");
+            watchHelp.style.whiteSpace = WhiteSpace.Normal;
+            watchHelp.style.marginBottom = 4;
+            page.Add(watchHelp);
+
+            var watch = new TextField("Watch pattern") { value = ClarityConsoleSettings.instance.WatchPattern };
+            watch.RegisterValueChangedCallback(evt => ClarityConsoleSettings.instance.WatchPattern = evt.newValue);
+            page.Add(watch);
+
+            var frames = new Label("Stack frames");
+            frames.style.unityFontStyleAndWeight = UnityEngine.FontStyle.Bold;
+            frames.style.marginTop = 12;
+            frames.style.marginBottom = 4;
+            page.Add(frames);
+
+            var radius = new SliderInt("Preview lines", ClarityConsoleSettings.MinSourcePreviewRadius, ClarityConsoleSettings.MaxSourcePreviewRadius)
+            {
+                value = ClarityConsoleSettings.instance.SourcePreviewRadius,
+                showInputField = true,
+            };
+            radius.tooltip = "Lines of source shown on each side of the line a stack frame points at. Zero shows only that line.";
+            radius.RegisterValueChangedCallback(evt => ClarityConsoleSettings.instance.SourcePreviewRadius = evt.newValue);
+            page.Add(radius);
+
+            var hoverRadius = new SliderInt("Hover card lines", ClarityConsoleSettings.MinSourcePreviewRadius, ClarityConsoleSettings.MaxSourceHoverRadius)
+            {
+                value = ClarityConsoleSettings.instance.SourceHoverRadius,
+                showInputField = true,
+            };
+            hoverRadius.tooltip = "Lines of source shown on each side of the frame's line in the card that appears while the pointer rests on a frame or its source block.";
+            hoverRadius.RegisterValueChangedCallback(evt => ClarityConsoleSettings.instance.SourceHoverRadius = evt.newValue);
+            page.Add(hoverRadius);
+
+            var hideEngine = new Toggle("Fold engine frames")
+            {
+                value = ClarityConsoleSettings.instance.HideEngineFrames,
+            };
+            hideEngine.tooltip = "Fold frames from the engine, the Editor, the runtime and Unity's own packages into one row, so your own code is what you see first. Off by default: every frame shows, as in the stock console.";
+            hideEngine.RegisterValueChangedCallback(evt => ClarityConsoleSettings.instance.HideEngineFrames = evt.newValue);
+            page.Add(hideEngine);
+
+            var hidePackages = new Toggle("Fold package frames")
+            {
+                value = ClarityConsoleSettings.instance.HidePackageFrames,
+            };
+            hidePackages.tooltip = "Fold frames compiled from installed packages, the ones under Library/PackageCache, such as a package's own logging path. Your embedded and local packages are not affected.";
+            hidePackages.RegisterValueChangedCallback(evt => ClarityConsoleSettings.instance.HidePackageFrames = evt.newValue);
+            page.Add(hidePackages);
+
+            var prefixes = new TextField("Also fold types starting with") { multiline = true, value = ClarityConsoleSettings.instance.HiddenFramePrefixes };
+            prefixes.tooltip = "One type-name prefix per line, for example Cysharp.Threading.Tasks. Lines starting with # are comments.";
+            prefixes.style.minHeight = 54;
+            prefixes.RegisterValueChangedCallback(evt => ClarityConsoleSettings.instance.HiddenFramePrefixes = evt.newValue);
+            page.Add(prefixes);
 
             var ignoreTitle = new Label("Ignored messages");
             ignoreTitle.style.unityFontStyleAndWeight = UnityEngine.FontStyle.Bold;
             ignoreTitle.style.marginTop = 12;
             ignoreTitle.style.marginBottom = 4;
-            root.Add(ignoreTitle);
+            page.Add(ignoreTitle);
 
             var ignoreHelp = new Label(
                 "Entries matching these rules are hidden from the console window. They are still captured " +
                 "and journaled, so removing a rule brings them back. Add rules by right-clicking a row in the console.");
             ignoreHelp.style.whiteSpace = WhiteSpace.Normal;
             ignoreHelp.style.marginBottom = 4;
-            root.Add(ignoreHelp);
+            page.Add(ignoreHelp);
 
             var rules = new VisualElement();
-            root.Add(rules);
+            page.Add(rules);
             RebuildRules(rules);
+
+            var preferences = new Button(() => SettingsService.OpenUserPreferences("Preferences/Clarity Console"))
+            {
+                text = "Open Preferences…",
+                name = "preferences",
+                tooltip = "Per-user options: theme, text size, channel chips, columns, Error Pause and the clear-on switches.",
+            };
+            preferences.style.alignSelf = Align.FlexStart;
+            preferences.style.marginTop = 12;
+            page.Add(preferences);
 
             var reset = new Button(() =>
             {
@@ -186,7 +207,7 @@ namespace ClarityConsole.Settings
             };
             reset.style.marginTop = 8;
             reset.style.width = 140;
-            root.Add(reset);
+            page.Add(reset);
         }
 
         private const int FieldHeight = 20;
