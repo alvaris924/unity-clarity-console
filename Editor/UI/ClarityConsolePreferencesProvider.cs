@@ -23,7 +23,7 @@ namespace ClarityConsole.UI
             return new SettingsProvider(Path, SettingsScope.User)
             {
                 label = "Clarity Console",
-                keywords = new HashSet<string> { "console", "log", "theme", "wrap", "column", "source", "stack", "clarity" },
+                keywords = new HashSet<string> { "console", "log", "theme", "wrap", "column", "source", "stack", "chip", "channel", "tag", "clarity" },
                 activateHandler = (_, root) => unsubscribe = Build(root),
                 deactivateHandler = () =>
                 {
@@ -79,6 +79,16 @@ namespace ClarityConsole.UI
             AddToggle(root, refreshers, "clear-on-play", "Clear on Play", () => ConsolePreferences.ClearOnPlay, v => ConsolePreferences.ClearOnPlay = v);
             AddToggle(root, refreshers, "clear-on-recompile", "Clear on Recompile", () => ConsolePreferences.ClearOnRecompile, v => ConsolePreferences.ClearOnRecompile = v);
             AddToggle(root, refreshers, "clear-on-build", "Clear on Build", () => ConsolePreferences.ClearOnBuild, v => ConsolePreferences.ClearOnBuild = v);
+
+            AddTitle(root, "Project settings", 12);
+            AddHelp(root, "The channel pattern, tag rules, ignore rules and stack-frame folding are shared with the whole team and live in Project Settings.");
+            var projectSettings = new Button(() => SettingsService.OpenProjectSettings("Project/Clarity Console"))
+            {
+                text = "Open Project Settings…",
+                name = "project-settings",
+            };
+            projectSettings.style.alignSelf = Align.FlexStart;
+            root.Add(projectSettings);
 
             var reset = new Button(ConsolePreferences.ResetToDefaults) { text = "Reset to defaults", name = "reset" };
             reset.style.alignSelf = Align.FlexStart;
