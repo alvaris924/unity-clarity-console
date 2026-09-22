@@ -46,6 +46,10 @@ The search field takes a small query language. Terms are joined by an implicit A
 
 Session markers always show, whatever the query, so the stream keeps its shape; the "Domain reloaded" divider is the exception, hidden by default and listed again through File > "Show domain reloads" or the Preferences page. A query that cannot be parsed matches nothing and says why in the status bar.
 
+## Channel chips
+
+The row of chips under the toolbar sizes itself to its chips, up to about three rows, and scrolls beyond that. Drag the bar's bottom edge to give the chips more or less room; the height is a per-user preference, and a double-click on the edge hands the sizing back. File > "Channel chips", or the same switch on the Preferences page, hides the row altogether. Up to 32 chips show before a "+N more" summary; search reaches the rest.
+
 ## Tags
 
 Channels come from `[Tag]` prefixes, and from tag rules for everything else. Right-click a row and choose "Tag as…" for a prompt filled in from that entry: the class that logged it when the stack has one, otherwise the message's first words; change the name, the match kind (contains, regex, or caller by class or file name) or the pattern, and the rule lands in Project Settings, where the Tags section also has a form for making rules from scratch, a switch per rule and a remove button. An explicit prefix always wins over a rule, rules apply in the order they were made, and every entry already captured is re-tagged the moment the rules change. "Tag by caller when nothing else applies" tags the rest with the short name of the class that logged them, so every message has a chip.

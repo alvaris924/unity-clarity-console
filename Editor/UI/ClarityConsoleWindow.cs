@@ -157,8 +157,9 @@ namespace ClarityConsole.UI
 
             root.Add(BuildToolbar());
 
-            _channels = new ChannelBar();
+            _channels = new ChannelBar { Visible = ConsolePreferences.ShowChannels, HeightOverride = ConsolePreferences.ChannelBarHeight };
             _channels.ChannelToggled += OnChannelToggled;
+            _channels.HeightChanged += height => ConsolePreferences.ChannelBarHeight = height;
             root.Add(_channels);
 
             _timeline = new TimelineStrip();
@@ -259,6 +260,7 @@ namespace ClarityConsole.UI
                     _ => ReferenceEquals(_theme, candidate) ? DropdownMenuAction.Status.Checked : DropdownMenuAction.Status.Normal);
             }
 
+            AppendPreferenceToggle(export, "Channel chips", () => ConsolePreferences.ShowChannels, v => ConsolePreferences.ShowChannels = v);
             AppendPreferenceToggle(export, "Columns/Time", () => ConsolePreferences.ShowTime, v => ConsolePreferences.ShowTime = v);
             AppendPreferenceToggle(export, "Columns/Frame", () => ConsolePreferences.ShowFrame, v => ConsolePreferences.ShowFrame = v);
             AppendPreferenceToggle(export, "Source under every frame", () => ConsolePreferences.InlineSource, v => ConsolePreferences.InlineSource = v);
@@ -804,6 +806,12 @@ namespace ClarityConsole.UI
             if (_detail != null)
             {
                 _detail.InlineSource = ConsolePreferences.InlineSource;
+            }
+
+            if (_channels != null)
+            {
+                _channels.Visible = ConsolePreferences.ShowChannels;
+                _channels.HeightOverride = ConsolePreferences.ChannelBarHeight;
             }
 
             if (_viewModel != null)

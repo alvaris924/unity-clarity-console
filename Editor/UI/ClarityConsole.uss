@@ -81,12 +81,33 @@
 }
 
 .cc-channels {
-    flex-direction: row;
-    flex-wrap: wrap;
-    padding: 2px 4px;
+    flex-direction: column;
+    flex-shrink: 0;
     border-bottom-width: 1px;
     border-bottom-color: var(--cc-border);
     background-color: var(--cc-bg);
+}
+
+.cc-channels-scroll {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-height: 0;
+}
+
+.cc-chip-row {
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 2px 4px;
+}
+
+.cc-channels-handle {
+    height: 5px;
+    flex-shrink: 0;
+    cursor: split-resize-up-down;
+}
+
+.cc-channels-handle:hover {
+    background-color: var(--cc-hover);
 }
 
 .cc-chip {

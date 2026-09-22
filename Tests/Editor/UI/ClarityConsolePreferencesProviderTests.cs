@@ -37,6 +37,7 @@ namespace ClarityConsole.Tests.UI
                 Assert.That(root.Q<Toggle>("time").value, Is.True);
                 Assert.That(root.Q<Toggle>("frame").value, Is.EqualTo(ConsolePreferences.ShowFrame));
                 Assert.That(root.Q<Toggle>("wrap").value, Is.False);
+                Assert.That(root.Q<Toggle>("chips").value, Is.EqualTo(ConsolePreferences.ShowChannels));
                 Assert.That(root.Q<DropdownField>("theme").value, Is.EqualTo(ConsoleThemes.Paper.DisplayName));
                 Assert.That(root.Q<Button>("reset"), Is.Not.Null);
                 Assert.That(root.Q<Button>("project-settings"), Is.Not.Null, "tag rules live in Project Settings; the page says where");
