@@ -189,6 +189,11 @@
     white-space: normal;
 }
 
+/* Long lines of source fold instead of running past the pane; an Editor window cannot paint outside itself. */
+.cc-wrap .cc-src-line {
+    white-space: normal;
+}
+
 .cc-msg-warning {
     color: var(--cc-warning);
 }

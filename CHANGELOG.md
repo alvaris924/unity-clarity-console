@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ### Added
 
+- Several rows at once: the list selects with Ctrl+click and Shift+click, Ctrl+A selects everything shown, and right-clicking inside the selection copies all of it — the messages, the messages with their stacks, or the whole run as a bug report with the Unity and package versions attached. Ctrl+C copies the selection too, and the status bar says how many rows are selected. The single-row actions stay in the same menu and still act on the row under the pointer.
 - Chip bar controls: File > "Channel chips" (also on the Preferences page) hides the row of channel chips altogether, and the bar's bottom edge drags to give the chips more or less room. Left alone, the bar sizes itself to its chips up to about three rows and scrolls past that; a dragged height is a per-user preference and a double-click on the edge hands the sizing back. Up to 32 chips show before the "+N more" summary, up from 16.
 - Manual tags: a channel no longer needs a `[Tag]` prefix. A tag rule in Project Settings puts messages that contain some text, match a regular expression, or come from a given class or file (`EnemySpawner`, `Game.EnemySpawner` or `EnemySpawner.cs`) into a named channel, and right-clicking a row offers "Tag as…", a prompt filled in from that entry: the calling class when it has one, otherwise the message's first words. An explicit prefix always wins, rules apply in the order they were made, and every entry already captured is re-tagged when the rules change. A separate switch tags entries with no prefix and no matching rule with the class that logged them, so every message lands in a channel.
 - Ember theme: warm black panels with one amber accent, gold warnings and coral errors, small-caps mono headers, a thin amber edge on source blocks, and a selected row that glows from its left edge like a coal catching. The fifth theme under File > Theme.
@@ -38,6 +39,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ### Changed
 
+- With Wrap on, long lines of source in the detail pane fold instead of running past the edge of the pane, like the messages and the stack frames already did. With Wrap off they keep their shape and are clipped, as before.
 - Text is smaller and adjustable: list rows default to 11 px (they inherited the Editor's 12 px before) and the detail pane runs one size less. The size is a per-user preference from 8 to 16, set from the Preferences page or File > Text size, and the row height follows it.
 - List rows are tighter: the severity icon column is 22 px instead of the 35 px Unity's default column minimum was forcing, so the message starts right after the icon, and the count column only appears while Collapse is on or a watch row is listed, giving the message the space up to the scrollbar the rest of the time.
 - The "Domain reloaded" divider is hidden by default, since a recompile happens many times an hour and the divider says little; File > "Show domain reloads" or the Preferences page lists it again. Editor start and Play mode markers always show.
