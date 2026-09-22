@@ -178,7 +178,6 @@
 .cc-wrap .cc-cell-message {
     white-space: normal;
     text-overflow: clip;
-    max-height: 100px;
 }
 
 .cc-wrap .cc-cell-icon {
