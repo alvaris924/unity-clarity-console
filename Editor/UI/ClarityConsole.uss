@@ -305,6 +305,141 @@
     -unity-font-style: bold;
 }
 
+/* Show flow: the button above the stack frames, and the window it opens. */
+.cc-detail-actions {
+    flex-direction: row;
+    justify-content: flex-end;
+    flex-shrink: 0;
+    padding: 2px 6px 0 6px;
+}
+
+.cc-flow-button {
+    margin: 0;
+    padding: 1px 8px;
+}
+
+.cc-flow {
+    flex-grow: 1;
+}
+
+.cc-flow-header {
+    flex-shrink: 0;
+    padding: 6px 10px;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--cc-border);
+    background-color: var(--cc-panel);
+}
+
+.cc-flow-message {
+    white-space: normal;
+    -unity-font-style: bold;
+}
+
+.cc-flow-summary {
+    margin-top: 2px;
+    font-size: 10px;
+    color: var(--cc-text-dim);
+}
+
+.cc-flow-scroll {
+    flex-grow: 1;
+}
+
+.cc-flow-steps {
+    padding: 10px 12px 16px 12px;
+}
+
+.cc-flow-card {
+    padding: 4px 0 2px 0;
+    border-width: 1px;
+    border-color: var(--cc-border);
+    border-radius: 4px;
+    background-color: var(--cc-panel);
+}
+
+.cc-flow-card-link:hover {
+    border-color: var(--cc-accent);
+}
+
+.cc-flow-card-entry {
+    border-left-width: 3px;
+    border-color: var(--cc-accent);
+}
+
+.cc-flow-card-failure {
+    border-left-width: 3px;
+    border-color: var(--cc-error);
+}
+
+.cc-flow-title {
+    flex-direction: row;
+    align-items: center;
+    padding: 0 8px;
+}
+
+.cc-flow-index {
+    min-width: 18px;
+    margin-right: 6px;
+    padding: 0 4px;
+    font-size: 10px;
+    -unity-text-align: middle-center;
+    color: var(--cc-text-dim);
+    border-width: 1px;
+    border-color: var(--cc-border);
+    border-radius: 9px;
+}
+
+.cc-flow-name {
+    flex-shrink: 1;
+    -unity-font-style: bold;
+}
+
+.cc-flow-note {
+    margin-left: 6px;
+    padding: 0 5px;
+    font-size: 10px;
+    color: var(--cc-text-dim);
+    background-color: var(--cc-chip-bg);
+    border-radius: 3px;
+}
+
+.cc-flow-card-failure .cc-flow-note {
+    color: var(--cc-error);
+}
+
+.cc-flow-location {
+    padding: 0 8px 0 32px;
+    font-size: 10px;
+    color: var(--cc-text-dim);
+}
+
+.cc-flow-card .cc-src-inline {
+    margin: 4px 8px 4px 8px;
+}
+
+.cc-flow-folded {
+    align-self: flex-start;
+    margin-left: 4px;
+    padding: 1px 8px;
+    color: var(--cc-text-dim);
+    -unity-font-style: italic;
+    border-width: 1px;
+    border-color: var(--cc-border);
+    border-radius: 10px;
+}
+
+.cc-flow-folded:hover {
+    background-color: var(--cc-hover);
+}
+
+/* The arrow sits under the step number of the card above it. */
+.cc-flow-connector {
+    width: 28px;
+    height: 18px;
+    margin-left: 3px;
+    --cc-flow-line: var(--cc-text-dim);
+}
+
 .cc-status {
     padding: 2px 6px;
     color: var(--cc-text-dim);

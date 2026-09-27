@@ -19,7 +19,7 @@ namespace ClarityConsole.UI
     /// </summary>
     internal sealed class ClarityConsoleWindow : EditorWindow
     {
-        private const string StyleSheetPath = "Packages/com.alvaris.clarity-console/Editor/UI/ClarityConsole.uss";
+        internal const string StyleSheetPath = "Packages/com.alvaris.clarity-console/Editor/UI/ClarityConsole.uss";
         /// <summary>Row height for a text size: the glyphs plus the padding that keeps rows breathable.</summary>
         private static int RowHeightFor(int textSize) => textSize + 9;
         private const long RefreshDelayMs = 50;
@@ -185,6 +185,7 @@ namespace ClarityConsole.UI
             split.Add(_list);
             _detail = new DetailView { InlineSource = ConsolePreferences.InlineSource };
             _detail.FrameActivated += OpenFrame;
+            _detail.FlowRequested += entry => CallFlowWindow.Open(entry);
             _detail.SnippetProvider = TryGetSnippet;
             _detail.HoverSnippetProvider = TryGetHoverSnippet;
             _detail.HoverHost = root;
@@ -475,6 +476,11 @@ namespace ClarityConsole.UI
             evt.menu.AppendAction("Copy for a bug report", _ => CopyForBugReport(new List<LogEntry> { entry }));
 
             evt.menu.AppendSeparator();
+            if (CallFlow.CanShow(entry))
+            {
+                evt.menu.AppendAction("Show flow", _ => CallFlowWindow.Open(entry));
+            }
+
             evt.menu.AppendAction("Tag as…", _ => TagPromptWindow.Open(entry, ShowNotice));
             evt.menu.AppendAction("Ignore this message", _ => AddIgnoreRule(IgnoreMatch.Message, entry.Message));
             if (entry.Channel.Length > 0)

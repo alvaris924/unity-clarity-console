@@ -18,8 +18,10 @@ namespace ClarityConsole.UI
         public const string FrameEntryClass = "cc-frame-entry";
         public const string FrameSelectedClass = "cc-frame-selected";
         public const string FrameHiddenClass = "cc-frame-hidden";
+        public const string FlowButtonClass = "cc-flow-button";
 
         private readonly TextField _message;
+        private readonly VisualElement _actions;
         private readonly VisualElement _frames;
         private readonly SourcePreview _preview;
         private readonly Dictionary<TraceFrame, Label> _rows = new Dictionary<TraceFrame, Label>();
@@ -44,6 +46,15 @@ namespace ClarityConsole.UI
             _message.AddToClassList("cc-mono");
             Add(_message);
 
+            _actions = new VisualElement();
+            _actions.AddToClassList("cc-detail-actions");
+            var flow = new Button(RequestFlow) { text = "Show flow" };
+            flow.AddToClassList(FlowButtonClass);
+            flow.tooltip = "Open the path that led here as a column of calls, from the first call down to this line.";
+            _actions.Add(flow);
+            _actions.style.display = DisplayStyle.None;
+            Add(_actions);
+
             _frames = new VisualElement();
             _frames.AddToClassList("cc-frames");
             Add(_frames);
@@ -63,6 +74,9 @@ namespace ClarityConsole.UI
 
         /// <summary>Raised when a frame should be opened in the code editor.</summary>
         public event Action<TraceFrame> FrameActivated;
+
+        /// <summary>Raised by the Show flow button with the entry on display.</summary>
+        public event Action<LogEntry> FlowRequested;
 
         /// <summary>Asks for the source around a frame. Returning null hides the preview.</summary>
         public Func<TraceFrame, SourceSnippet> SnippetProvider { get; set; }
@@ -134,6 +148,18 @@ namespace ClarityConsole.UI
 
         public bool IsPreviewVisible => _preview.style.display.value == DisplayStyle.Flex;
 
+        /// <summary>True while the Show flow button is offered, which needs an entry with a stack trace.</summary>
+        public bool IsFlowButtonVisible => _actions.style.display.value == DisplayStyle.Flex;
+
+        /// <summary>Asks for the flow of the entry on display; what the Show flow button does.</summary>
+        internal void RequestFlow()
+        {
+            if (CallFlow.CanShow(_entry))
+            {
+                FlowRequested?.Invoke(_entry);
+            }
+        }
+
         public void Show(LogEntry entry)
         {
             EndHover();
@@ -142,6 +168,7 @@ namespace ClarityConsole.UI
             _expanded.Clear();
             SelectedFrame = null;
             _preview.Hide();
+            _actions.style.display = CallFlow.CanShow(entry) ? DisplayStyle.Flex : DisplayStyle.None;
 
             if (entry == null)
             {

@@ -35,6 +35,30 @@ namespace ClarityConsole.Tests.UI
         }
 
         [Test]
+        public void FlowButton_ShowsOnlyForEntriesWithAStack_AndHandsOverTheEntry()
+        {
+            var view = new DetailView();
+            var requested = new List<LogEntry>();
+            view.FlowRequested += requested.Add;
+            Assert.That(view.IsFlowButtonVisible, Is.False, "nothing to follow before anything is selected");
+            Assert.That(view.Q<Button>(className: DetailView.FlowButtonClass), Is.Not.Null);
+
+            LogEntry entry = Entry("boom", Trace("Game.Foo:Bar () (at Assets/Game/Foo.cs:20)"));
+            view.Show(entry);
+            Assert.That(view.IsFlowButtonVisible, Is.True);
+            view.RequestFlow();
+            Assert.That(requested, Is.EqualTo(new[] { entry }));
+
+            view.Show(LogEntry.Marker("Entered Play mode", DateTime.UtcNow, 0));
+            Assert.That(view.IsFlowButtonVisible, Is.False, "a marker has no stack");
+            view.RequestFlow();
+            Assert.That(requested.Count, Is.EqualTo(1));
+
+            view.Show(null);
+            Assert.That(view.IsFlowButtonVisible, Is.False);
+        }
+
+        [Test]
         public void NewPane_ShowsNoPreviewFrame_BeforeAnythingIsSelected()
         {
             Assert.That(new DetailView().IsPreviewVisible, Is.False);
