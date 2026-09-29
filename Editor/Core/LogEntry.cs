@@ -81,6 +81,12 @@ namespace ClarityConsole.Core
         /// <summary>The divider written after every domain reload; frequent enough to be hidden by default.</summary>
         public const string DomainReloadMarker = "Domain reloaded";
 
+        /// <summary>Start of the divider written on entering Play mode; the session number follows.</summary>
+        public const string EnteredPlayModeMarker = "Entered Play mode, session ";
+
+        /// <summary>The divider written as Play mode ends, after everything the run logged.</summary>
+        public const string ExitingPlayModeMarker = "Exiting Play mode";
+
         /// <summary>The divider written when the Editor starts.</summary>
         public const string EditorStartedMarker = "Editor started";
 
