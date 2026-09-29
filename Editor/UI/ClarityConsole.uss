@@ -440,6 +440,118 @@
     --cc-flow-line: var(--cc-text-dim);
 }
 
+/* The session report window. */
+.cc-report {
+    flex-grow: 1;
+}
+
+.cc-report-scroll {
+    flex-grow: 1;
+}
+
+.cc-report-scroll > .unity-scroll-view__content-viewport > .unity-scroll-view__content-container {
+    padding: 10px 14px 16px 14px;
+}
+
+.cc-report-picker {
+    min-width: 120px;
+}
+
+.cc-report-title {
+    font-size: 10px;
+    color: var(--cc-text-dim);
+}
+
+.cc-report-verdict {
+    margin-top: 2px;
+    font-size: 15px;
+    white-space: normal;
+    -unity-font-style: bold;
+}
+
+.cc-report-note {
+    margin-top: 2px;
+    white-space: normal;
+    color: var(--cc-text-dim);
+}
+
+.cc-report-tiles {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.cc-report-tile {
+    min-width: 84px;
+    margin: 0 8px 8px 0;
+    padding: 6px 10px;
+    border-width: 1px;
+    border-color: var(--cc-border);
+    border-radius: 4px;
+    background-color: var(--cc-panel);
+}
+
+.cc-report-tile-count {
+    font-size: 18px;
+    -unity-font-style: bold;
+}
+
+.cc-report-tile-label {
+    font-size: 10px;
+    color: var(--cc-text-dim);
+}
+
+.cc-report-section {
+    margin-top: 12px;
+    margin-bottom: 4px;
+    -unity-font-style: bold;
+}
+
+.cc-report-card {
+    padding: 6px 8px;
+    border-width: 1px;
+    border-left-width: 3px;
+    border-color: var(--cc-error);
+    border-radius: 4px;
+    background-color: var(--cc-panel);
+}
+
+.cc-report-error {
+    white-space: normal;
+}
+
+.cc-report-buttons {
+    flex-direction: row;
+    margin-top: 6px;
+}
+
+.cc-report-buttons > .unity-button {
+    margin: 0 6px 0 0;
+}
+
+.cc-report-line {
+    flex-direction: row;
+    padding: 1px 4px;
+    border-radius: 3px;
+}
+
+.cc-report-line:hover {
+    background-color: var(--cc-hover);
+}
+
+.cc-report-count {
+    min-width: 56px;
+    color: var(--cc-text-dim);
+    -unity-text-align: middle-right;
+    margin-right: 8px;
+}
+
+.cc-report-text {
+    flex-shrink: 1;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
 .cc-status {
     padding: 2px 6px;
     color: var(--cc-text-dim);

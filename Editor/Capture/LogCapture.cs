@@ -205,10 +205,10 @@ namespace ClarityConsole.Capture
                         SessionState.SetInt(_sessionStateKey, Store.CurrentSession);
                     }
 
-                    AppendMarker($"Entered Play mode, session {Store.CurrentSession}");
+                    AppendMarker(LogEntry.EnteredPlayModeMarker + Store.CurrentSession);
                     break;
                 case PlayModeStateChange.ExitingPlayMode:
-                    AppendMarker("Exiting Play mode");
+                    AppendMarker(LogEntry.ExitingPlayModeMarker);
                     break;
             }
         }

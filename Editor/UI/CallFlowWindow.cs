@@ -15,9 +15,6 @@ namespace ClarityConsole.UI
     /// </summary>
     internal sealed class CallFlowWindow : EditorWindow
     {
-        private const long SheetRetryMs = 250;
-        private const int SheetRetryLimit = 480;   // two minutes, as long as the console itself waits
-
         [SerializeField]
         private string _message;
 
@@ -34,10 +31,7 @@ namespace ClarityConsole.UI
         private readonly SourceCache _sources = new SourceCache();
         private LogEntry _entry;
         private CallFlowView _view;
-        private StyleSheet _structureSheet;
-        private StyleSheet _themeSheet;
-        private ConsoleTheme _theme;
-        private int _sheetAttempts;
+        private WindowTheme _windowTheme;
 
         /// <summary>Opens the flow window, or brings it forward, showing <paramref name="entry"/>.</summary>
         public static CallFlowWindow Open(LogEntry entry)
@@ -71,28 +65,20 @@ namespace ClarityConsole.UI
                 _entry = new LogEntry(LogEntryKind.Log, _severity, _message, _stackTrace, DateTime.UtcNow, 0, 0, true, ObjectRef.None);
             }
 
-            ConsolePreferences.Changed += OnPreferencesChanged;
             ClarityConsoleSettings.Changed += OnSettingsChanged;
         }
 
         private void OnDisable()
         {
-            ConsolePreferences.Changed -= OnPreferencesChanged;
             ClarityConsoleSettings.Changed -= OnSettingsChanged;
+            _windowTheme?.Detach();
         }
 
         private void CreateGUI()
         {
             VisualElement root = rootVisualElement;
-            root.AddToClassList("cc-root");
             root.AddToClassList("cc-flow-root");
-            ApplyTheme(ConsoleThemes.Find(ConsolePreferences.Theme));
-            if (!TryLoadStructureSheet())
-            {
-                root.schedule.Execute(() => TryLoadStructureSheet()).Every(SheetRetryMs).Until(() => _structureSheet != null || ++_sheetAttempts > SheetRetryLimit);
-            }
-
-            root.style.fontSize = ConsolePreferences.TextSize;
+            _windowTheme = new WindowTheme(root);
 
             _view = new CallFlowView
             {
@@ -102,74 +88,6 @@ namespace ClarityConsole.UI
             _view.FrameActivated += OpenFrame;
             root.Add(_view);
             _view.Show(_entry);
-        }
-
-        private bool TryLoadStructureSheet()
-        {
-            if (_structureSheet != null)
-            {
-                return true;
-            }
-
-            _structureSheet = AssetDatabase.LoadAssetAtPath<StyleSheet>(ClarityConsoleWindow.StyleSheetPath);
-            if (_structureSheet == null)
-            {
-                return false;
-            }
-
-            // The theme sheet must come after the structure sheet so its rules keep precedence.
-            VisualElement root = rootVisualElement;
-            root.styleSheets.Add(_structureSheet);
-            if (_themeSheet == null && _theme != null)
-            {
-                _themeSheet = _theme.Load();
-            }
-
-            if (_themeSheet != null)
-            {
-                root.styleSheets.Remove(_themeSheet);
-                root.styleSheets.Add(_themeSheet);
-            }
-
-            return true;
-        }
-
-        private void ApplyTheme(ConsoleTheme theme)
-        {
-            VisualElement root = rootVisualElement;
-            if (_themeSheet != null && root.styleSheets.Contains(_themeSheet))
-            {
-                root.styleSheets.Remove(_themeSheet);
-            }
-
-            if (_theme != null)
-            {
-                root.RemoveFromClassList("cc-theme-" + _theme.Id);
-            }
-
-            _theme = theme;
-            _themeSheet = theme.Load();
-            if (_themeSheet != null)
-            {
-                root.styleSheets.Add(_themeSheet);
-            }
-
-            root.AddToClassList("cc-theme-" + theme.Id);
-        }
-
-        private void OnPreferencesChanged()
-        {
-            if (_view == null)
-            {
-                return;
-            }
-
-            rootVisualElement.style.fontSize = ConsolePreferences.TextSize;
-            ConsoleTheme wanted = ConsoleThemes.Find(ConsolePreferences.Theme);
-            if (!ReferenceEquals(wanted, _theme))
-            {
-                ApplyTheme(wanted);
-            }
         }
 
         private void OnSettingsChanged()
