@@ -40,6 +40,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) 
 
 ### Changed
 
+- One settings page: everything the console lets you set is now under Project Settings > Clarity Console, opened by File > Settings…. The page's top half, "Just for you", holds the per-user switches (theme, text size, wrap, chips, columns, Error Pause, clear-on) that stay in EditorPrefs and are never committed; the bottom half, "Shared with the project", holds the channels, tags, watch rows, folding and ignore rules the team commits. Each half has its own reset. The separate page under Edit > Preferences is gone, and File > Preferences… is now File > Settings….
 - With Wrap on, long lines of source in the detail pane fold instead of running past the edge of the pane, like the messages and the stack frames already did. With Wrap off they keep their shape and are clipped, as before.
 - Text is smaller and adjustable: list rows default to 11 px (they inherited the Editor's 12 px before) and the detail pane runs one size less. The size is a per-user preference from 8 to 16, set from the Preferences page or File > Text size, and the row height follows it.
 - List rows are tighter: the severity icon column is 22 px instead of the 35 px Unity's default column minimum was forcing, so the message starts right after the icon, and the count column only appears while Collapse is on or a watch row is listed, giving the message the space up to the scrollbar the rest of the time.

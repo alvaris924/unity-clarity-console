@@ -6,41 +6,24 @@ using UnityEngine.UIElements;
 
 namespace ClarityConsole.Settings
 {
-    /// <summary>The Project Settings page for Clarity Console.</summary>
+    /// <summary>
+    /// The shared half of the Clarity Console settings page: what a team commits with the project in
+    /// <c>ProjectSettings/ClarityConsole.asset</c>. The page itself, with the per-user preferences above
+    /// these sections, is registered by the UI assembly, which owns the themes the preferences name.
+    /// </summary>
     internal static class ClarityConsoleSettingsProvider
     {
+        /// <summary>Where the one Clarity Console settings page lives.</summary>
+        public const string Path = "Project/Clarity Console";
+
         private const string WatchExample = "[watch:PlayerHP] 87";
 
-        [SettingsProvider]
-        public static SettingsProvider Create()
+        /// <summary>Adds the shared sections, from Channels to Ignored messages, to <paramref name="page"/>.</summary>
+        internal static void BuildShared(VisualElement page)
         {
-            return new SettingsProvider("Project/Clarity Console", SettingsScope.Project)
-            {
-                label = "Clarity Console",
-                keywords = new HashSet<string> { "console", "log", "channel", "tag", "clarity" },
-                activateHandler = (_, root) => Build(root),
-            };
-        }
-
-        /// <summary>
-        /// Builds the page. The settings window gives providers a plain container and does not scroll it, so
-        /// the content goes into a ScrollView of its own: a page taller than the window used to lose its tail,
-        /// the Tags section first of all. Internal for the tests.
-        /// </summary>
-        internal static void Build(VisualElement root)
-        {
-            root.style.flexGrow = 1;
-            var scroll = new ScrollView(ScrollViewMode.Vertical) { name = "page", horizontalScrollerVisibility = ScrollerVisibility.Hidden };
-            scroll.style.flexGrow = 1;
-            root.Add(scroll);
-            VisualElement page = scroll.contentContainer;
-            page.style.paddingLeft = 10;
-            page.style.paddingRight = 10;
-            page.style.paddingTop = 8;
-            page.style.paddingBottom = 12;
-
             var title = new Label("Channels");
             title.style.unityFontStyleAndWeight = UnityEngine.FontStyle.Bold;
+            title.style.marginTop = 12;
             title.style.marginBottom = 4;
             page.Add(title);
 
@@ -177,16 +160,6 @@ namespace ClarityConsole.Settings
             page.Add(rules);
             RebuildRules(rules);
 
-            var preferences = new Button(() => SettingsService.OpenUserPreferences("Preferences/Clarity Console"))
-            {
-                text = "Open Preferences…",
-                name = "preferences",
-                tooltip = "Per-user options: theme, text size, channel chips, columns, Error Pause and the clear-on switches.",
-            };
-            preferences.style.alignSelf = Align.FlexStart;
-            preferences.style.marginTop = 12;
-            page.Add(preferences);
-
             var reset = new Button(() =>
             {
                 ClarityConsoleSettings.instance.ResetToDefaults();
@@ -203,10 +176,12 @@ namespace ClarityConsole.Settings
                 RebuildRules(rules);
             })
             {
-                text = "Reset to default",
+                text = "Reset project settings",
+                name = "reset-project",
+                tooltip = "Puts the shared settings above back to their defaults. Your own preferences are not touched.",
             };
-            reset.style.marginTop = 8;
-            reset.style.width = 140;
+            reset.style.alignSelf = Align.FlexStart;
+            reset.style.marginTop = 12;
             page.Add(reset);
         }
 

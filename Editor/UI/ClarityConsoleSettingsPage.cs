@@ -9,21 +9,27 @@ using UnityEngine.UIElements;
 namespace ClarityConsole.UI
 {
     /// <summary>
-    /// The Preferences page for Clarity Console: the per-user switches that the toolbar and the File menu
-    /// also expose, in one place, plus a reset. Project-wide settings live on the Project Settings page.
+    /// The one settings page for Clarity Console, under Project Settings. The top half is "Just for you":
+    /// the per-user switches the toolbar and the File menu also expose, kept in EditorPrefs and never
+    /// committed. The bottom half is what the team shares through <c>ProjectSettings/ClarityConsole.asset</c>:
+    /// channels, tags, watch rows, stack frames and ignore rules. Each half has its own reset.
     /// </summary>
-    internal static class ClarityConsolePreferencesProvider
+    internal static class ClarityConsoleSettingsPage
     {
-        public const string Path = "Preferences/Clarity Console";
+        public const string Path = ClarityConsoleSettingsProvider.Path;
 
         [SettingsProvider]
         public static SettingsProvider Create()
         {
             Action unsubscribe = null;
-            return new SettingsProvider(Path, SettingsScope.User)
+            return new SettingsProvider(Path, SettingsScope.Project)
             {
                 label = "Clarity Console",
-                keywords = new HashSet<string> { "console", "log", "theme", "wrap", "column", "source", "stack", "chip", "channel", "tag", "clarity" },
+                keywords = new HashSet<string>
+                {
+                    "console", "log", "theme", "wrap", "column", "source", "stack", "chip", "channel", "tag",
+                    "watch", "ignore", "fold", "frame", "preview", "clarity",
+                },
                 activateHandler = (_, root) => unsubscribe = Build(root),
                 deactivateHandler = () =>
                 {
@@ -33,16 +39,27 @@ namespace ClarityConsole.UI
             };
         }
 
-        /// <summary>Builds the page into <paramref name="root"/>; returns the action that detaches it from preference changes.</summary>
-        public static Action Build(VisualElement root)
+        /// <summary>
+        /// Builds the page into <paramref name="container"/>; returns the action that detaches it from preference
+        /// changes. The settings window gives a provider a plain container and never scrolls it, so the page
+        /// scrolls itself: without that, everything below the fold was simply not there.
+        /// </summary>
+        public static Action Build(VisualElement container)
         {
+            container.style.flexGrow = 1;
+            var scroll = new ScrollView(ScrollViewMode.Vertical) { name = "page", horizontalScrollerVisibility = ScrollerVisibility.Hidden };
+            scroll.style.flexGrow = 1;
+            container.Add(scroll);
+            VisualElement root = scroll.contentContainer;
             root.style.paddingLeft = 10;
             root.style.paddingRight = 10;
             root.style.paddingTop = 8;
+            root.style.paddingBottom = 12;
 
             var refreshers = new List<Action>();
 
-            AddTitle(root, "Look", 0);
+            AddSection(root, "Just for you", "Stored in EditorPrefs on this machine and never committed. The toolbar and the File menu change the same switches.", 0);
+            AddTitle(root, "Look", 4);
             var theme = new DropdownField("Theme", ConsoleThemes.All.Select(t => t.DisplayName).ToList(), ThemeIndex()) { name = "theme" };
             theme.RegisterValueChangedCallback(evt =>
             {
@@ -82,20 +99,18 @@ namespace ClarityConsole.UI
             AddToggle(root, refreshers, "clear-on-recompile", "Clear on Recompile", () => ConsolePreferences.ClearOnRecompile, v => ConsolePreferences.ClearOnRecompile = v);
             AddToggle(root, refreshers, "clear-on-build", "Clear on Build", () => ConsolePreferences.ClearOnBuild, v => ConsolePreferences.ClearOnBuild = v);
 
-            AddTitle(root, "Project settings", 12);
-            AddHelp(root, "The channel pattern, tag rules, ignore rules and stack-frame folding are shared with the whole team and live in Project Settings.");
-            var projectSettings = new Button(() => SettingsService.OpenProjectSettings("Project/Clarity Console"))
+            var reset = new Button(ConsolePreferences.ResetToDefaults)
             {
-                text = "Open Project Settings…",
-                name = "project-settings",
+                text = "Reset my preferences",
+                name = "reset",
+                tooltip = "Puts the switches above back to their defaults. The shared project settings below are not touched.",
             };
-            projectSettings.style.alignSelf = Align.FlexStart;
-            root.Add(projectSettings);
-
-            var reset = new Button(ConsolePreferences.ResetToDefaults) { text = "Reset to defaults", name = "reset" };
             reset.style.alignSelf = Align.FlexStart;
-            reset.style.marginTop = 14;
+            reset.style.marginTop = 12;
             root.Add(reset);
+
+            AddSection(root, "Shared with the project", "Saved in ProjectSettings/ClarityConsole.asset. Commit it so the whole team gets the same channels, tags and rules.", 24);
+            ClarityConsoleSettingsProvider.BuildShared(root);
 
             // Keep the page honest when a toolbar toggle or another window changes a preference.
             void Refresh()
@@ -122,6 +137,26 @@ namespace ClarityConsole.UI
             }
 
             return 0;
+        }
+
+        /// <summary>A section heading, one size up from the titles inside it, with a line saying where its values live.</summary>
+        private static void AddSection(VisualElement root, string text, string where, int marginTop)
+        {
+            var heading = new Label(text) { name = "section" };
+            heading.style.unityFontStyleAndWeight = FontStyle.Bold;
+            heading.style.fontSize = 14;
+            heading.style.marginTop = marginTop;
+            heading.style.paddingBottom = 2;
+            heading.style.borderBottomWidth = 1;
+            heading.style.borderBottomColor = new Color(0.5f, 0.5f, 0.5f, 0.4f);
+            root.Add(heading);
+
+            var note = new Label(where);
+            note.style.whiteSpace = WhiteSpace.Normal;
+            note.style.color = new Color(0.6f, 0.6f, 0.6f);
+            note.style.marginTop = 2;
+            note.style.marginBottom = 2;
+            root.Add(note);
         }
 
         private static void AddTitle(VisualElement root, string text, int marginTop)
