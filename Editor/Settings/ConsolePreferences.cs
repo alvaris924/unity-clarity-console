@@ -133,6 +133,16 @@ namespace ClarityConsole.Settings
             }
         }
 
+        /// <summary>
+        /// Open the session report as Play mode ends. Off by default: File > Session report opens it on
+        /// demand, and a window that pops up after every run is a habit to opt into.
+        /// </summary>
+        public static bool ReportAfterPlay
+        {
+            get => Get(nameof(ReportAfterPlay), false);
+            set => Set(nameof(ReportAfterPlay), value);
+        }
+
         /// <summary>Wrap long messages in the list so rows grow instead of cutting the text off.</summary>
         public static bool WrapMessages
         {
@@ -172,6 +182,7 @@ namespace ClarityConsole.Settings
             EditorPrefs.DeleteKey(Prefix + nameof(ChannelBarHeight));
             EditorPrefs.DeleteKey(Prefix + nameof(TextSize));
             EditorPrefs.DeleteKey(Prefix + nameof(WrapMessages));
+            EditorPrefs.DeleteKey(Prefix + nameof(ReportAfterPlay));
             EditorPrefs.DeleteKey(Prefix + nameof(Theme));
             Changed?.Invoke();
         }

@@ -78,6 +78,14 @@ Selecting an entry lists its stack frames, without the console's own capture fra
 
 A stack only holds the calls in progress when the message was logged, so calls that had already returned do not appear, and a coroutine's path starts where it was resumed rather than where it was started.
 
+## Session report
+
+File > Session report… sums up the latest Play session, and the picker at the top reaches any earlier session the console still holds. The first line is a verdict, such as "3 errors, 2 different. The first came 0:41 in." or "A clean run: no errors or warnings.". Under it are how long the run took, its average frame rate over the frames it spanned, and tiles counting logs, warnings and errors; errors include exceptions and assertions.
+
+The first error of the run gets a card of its own, since it is usually the cause of the ones after it: its message, how far into the run it came, and where it was logged, with "Show in console" to select it and "Show flow" for its call path. Then come the most repeated errors, the chattiest messages (a message logged only once is not counted as chatty) and the busiest channels, five of each; click a line to select its first entry in the console. An entry that the console's current filters, search or collapse hide cannot be selected, and the status bar says so.
+
+A run covers everything between its "Entered Play mode" and "Exiting Play mode" dividers. What was logged in Edit mode afterwards is left out. A run whose start has already been evicted from the console, or one still going, is reported with a note saying so. Turn on "Report after Play", in the File menu or on the Preferences page, to have the report open by itself as each run ends. Frame times are not captured, so the report gives an average frame rate but not individual spikes.
+
 ## Reading in a narrow panel
 
 The Wrap toggle in the toolbar wraps long messages instead of cutting them off, and rows grow to fit the whole message, line breaks included; only a message past 20,000 characters is clipped in the row, with a note saying how much more the detail pane holds. The severity icon, time and frame stay aligned with the first line, and stack frames wrap as well. Wrap is a per-user preference, off by default, because fixed-height rows are cheaper and most messages fit on one line in a wide window. When the window is too narrow for the toolbar, the search field and the severity toggles move to a second line together rather than being clipped on the right.
@@ -86,7 +94,7 @@ The Time and Frame columns are off by default for the same reason: in a docked p
 
 ## Preferences
 
-Edit > Preferences > Clarity Console gathers the per-user switches in one place: the theme, the text size (8 to 16 px for the rows; the detail pane runs one size less, and File > Text size steps it too), wrap, source under every frame, the Time and Frame columns, Error Pause and the clear-on options, with a reset to defaults. The same switches are reachable from the toolbar and the File menu; the page follows changes made there. Preferences live in `EditorPrefs` and are never committed with the project, unlike Project Settings > Clarity Console, which holds what a team shares.
+Edit > Preferences > Clarity Console gathers the per-user switches in one place: the theme, the text size (8 to 16 px for the rows; the detail pane runs one size less, and File > Text size steps it too), wrap, source under every frame, the Time and Frame columns, Error Pause, the clear-on options and Report after Play, with a reset to defaults. The same switches are reachable from the toolbar and the File menu; the page follows changes made there. Preferences live in `EditorPrefs` and are never committed with the project, unlike Project Settings > Clarity Console, which holds what a team shares.
 
 ## Clearing and pausing
 

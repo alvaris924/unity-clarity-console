@@ -264,6 +264,9 @@ namespace ClarityConsole.UI
             export.menu.AppendSeparator();
             export.menu.AppendAction("Copy all shown", _ => CopyVisible());
             export.menu.AppendSeparator();
+            export.menu.AppendAction("Session report…", _ => SessionReportWindow.OpenLatest());
+            AppendPreferenceToggle(export, "Report after Play", () => ConsolePreferences.ReportAfterPlay, v => ConsolePreferences.ReportAfterPlay = v);
+            export.menu.AppendSeparator();
             foreach (ConsoleTheme theme in ConsoleThemes.All)
             {
                 ConsoleTheme candidate = theme;
@@ -764,6 +767,56 @@ namespace ClarityConsole.UI
         }
 
         /// <summary>Selects a row and scrolls it into view, pausing auto-scroll so it stays there.</summary>
+        /// <summary>
+        /// Brings the live console forward, opening it if needed, and selects <paramref name="entry"/>. Used
+        /// by the session report. An entry the current filters, search or collapse hide cannot be selected,
+        /// and the status bar says so instead.
+        /// </summary>
+        internal static void Reveal(LogEntry entry)
+        {
+            if (entry == null)
+            {
+                return;
+            }
+
+            ClarityConsoleWindow window = null;
+            foreach (ClarityConsoleWindow candidate in Resources.FindObjectsOfTypeAll<ClarityConsoleWindow>())
+            {
+                if (!candidate.IsImport)
+                {
+                    window = candidate;
+                    break;
+                }
+            }
+
+            if (window == null)
+            {
+                Open();
+                window = GetWindow<ClarityConsoleWindow>();
+            }
+
+            window.Focus();
+            window.RevealEntry(entry);
+        }
+
+        private void RevealEntry(LogEntry entry)
+        {
+            if (_viewModel == null || _list == null)
+            {
+                return;
+            }
+
+            FlushRefresh();
+            int index = _viewModel.Visible.IndexOf(entry);
+            if (index < 0)
+            {
+                ShowNotice("That entry is hidden by the current filters, search or collapse, or it has been cleared.");
+                return;
+            }
+
+            JumpToRow(index);
+        }
+
         private void JumpToRow(int index)
         {
             if (_list == null || index < 0 || index >= _viewModel.Visible.Count)

@@ -26,6 +26,7 @@ Status legend: `idea` not started, `planned` accepted for a milestone, `in progr
 
 - Manual tags (rules by text, regex or caller, "Tag as…" on a row, and caller auto-tagging): v1.0.0 scope, September 2026.
 - Show flow (an entry's call path as a column of cards with source): September 2026. The tree of earlier logs is row 13.
+- Session report (a Play session's verdict, counts, first error and top talkers): September 2026. Per-frame spikes need frame-time capture, row 12.
 
 ## Suggested order
 
