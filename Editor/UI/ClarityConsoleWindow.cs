@@ -481,6 +481,7 @@ namespace ClarityConsole.UI
                 evt.menu.AppendAction("Show flow", _ => CallFlowWindow.Open(entry));
             }
 
+            AppendContextActions(evt, entry);
             evt.menu.AppendAction("Tag as…", _ => TagPromptWindow.Open(entry, ShowNotice));
             evt.menu.AppendAction("Ignore this message", _ => AddIgnoreRule(IgnoreMatch.Message, entry.Message));
             if (entry.Channel.Length > 0)
@@ -490,6 +491,49 @@ namespace ClarityConsole.UI
 
             evt.menu.AppendSeparator();
             evt.menu.AppendAction("Manage ignore rules…", _ => SettingsService.OpenProjectSettings(ClarityConsoleSettingsPage.Path));
+        }
+
+        /// <summary>
+        /// Lists the <c>[ContextMenu]</c> methods of the object the entry was logged with, and of the other
+        /// scripts on its GameObject, under "Run on &lt;name&gt;", so a debug cheat is one click from the
+        /// message. Nothing is added for an import, an entry without a context object, or one whose object
+        /// is gone.
+        /// </summary>
+        private void AppendContextActions(ContextualMenuPopulateEvent evt, LogEntry entry)
+        {
+            if (IsImport)
+            {
+                return;
+            }
+
+            UnityEngine.Object context = ContextActions.Resolve(entry.Context);
+            List<ContextAction> actions = ContextActions.For(context);
+            if (actions.Count == 0)
+            {
+                return;
+            }
+
+            string root = "Run on " + MenuSafe(ContextActions.DisplayName(context)) + "/";
+            foreach (ContextAction action in actions)
+            {
+                ContextAction chosen = action;
+                evt.menu.AppendAction(
+                    root + action.Path,
+                    _ => RunContextAction(chosen),
+                    _ => chosen.IsEnabled() ? DropdownMenuAction.Status.Normal : DropdownMenuAction.Status.Disabled);
+            }
+        }
+
+        private void RunContextAction(ContextAction action)
+        {
+            string name = action.Target != null ? action.Target.GetType().Name + " › " + action.MenuItem : action.MenuItem;
+            ShowNotice(action.Run() ? "Ran " + name + "." : "Could not run " + name + "; the console shows why if it threw.");
+        }
+
+        /// <summary>A slash in an object's name would open a submenu, so it becomes a lookalike.</summary>
+        internal static string MenuSafe(string text)
+        {
+            return string.IsNullOrEmpty(text) ? string.Empty : text.Replace('/', '∕');
         }
 
         /// <summary>Writes the rows currently shown to a file the user picks.</summary>
