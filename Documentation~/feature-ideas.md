@@ -18,11 +18,14 @@ Status legend: `idea` not started, `planned` accepted for a milestone, `in progr
 | 10 | **Problems tab**: compiler, shader and Burst errors grouped by file, one click to the line | Compile errors are easy to miss under gameplay logs in a mixed stream. | `CompilationPipeline` messages | Medium | planned (roadmap) |
 | 11 | **Test Runner markers**: session markers at each test's start and end through `TestRunnerApi` callbacks | Attributes logs to the test that produced them. | Session markers | Small | idea |
 | 12 | **Frame-time spike markers**: a marker whenever a Play-mode frame exceeds a threshold | Correlates hitches with what was logged at that moment; complements the frame lens and the timeline. | Session markers, `Time.unscaledDeltaTime` sampling | Small to medium | idea |
-| 13 | **Device logs**: stream `adb logcat` and iOS device logs into the console with the same channels and filters | The first thing a mobile team asks for; deferred until the Editor-side features are complete. | Log file import's logcat parser | Large | deferred |
+| 13 | **Flow of earlier logs**: in the Show flow window, merge the stacks of the entries logged just before the selected one, in the same frame or from the same context object, into a call tree, with each earlier message as a badge on its branch | A stack only shows the calls still in progress; the earlier logs show which branches ran and returned before the one that failed. | Show flow window, frame lens, context ids | Medium | idea |
+| 14 | **Editable watch rows**: a watch row logged with a context object, `Debug.Log($"[watch:_speed] {_speed}", this)`, offers a field bound to that serialized field in the detail pane, so a value can be changed in Play mode from the console | Tuning a value while watching it change, without hunting for the object in the Hierarchy. Serialized fields only, through `SerializedObject`; edits revert on leaving Play mode like the Inspector's. | Watch rows, `LogEntry.Context`, `SerializedObject`, `PropertyField` | Medium | idea |
+| 15 | **Device logs**: stream `adb logcat` and iOS device logs into the console with the same channels and filters | The first thing a mobile team asks for; deferred until the Editor-side features are complete. | Log file import's logcat parser | Large | deferred |
 
 ## Shipped from this list
 
 - Manual tags (rules by text, regex or caller, "Tag as…" on a row, and caller auto-tagging): v1.0.0 scope, September 2026.
+- Show flow (an entry's call path as a column of cards with source): September 2026. The tree of earlier logs is row 13.
 
 ## Suggested order
 
