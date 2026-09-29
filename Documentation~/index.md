@@ -78,6 +78,10 @@ Selecting an entry lists its stack frames, without the console's own capture fra
 
 A stack only holds the calls in progress when the message was logged, so calls that had already returned do not appear, and a coroutine's path starts where it was resumed rather than where it was started.
 
+## Running debug actions from a row
+
+A row logged with a context object, `Debug.Log("wave cleared", this)`, offers the `[ContextMenu]` methods of that object in its right-click menu, under "Run on" and the object's name: first the script that logged, then every other script on the same GameObject, each under its type name. These are the methods the Inspector's own context menu lists, so the debug cheats a project already has, such as "Kill", "Give 100 gold" or "Skip wave", run straight from the message about the object they act on, without finding it in the Hierarchy first. Items keep the script's priorities and its validate functions, so one the Inspector would grey out is greyed out here too; methods that take arguments are left out, as the Inspector leaves them out. Each run is an undo step, an exception the method throws is logged against the object and shows up as a row, and the status bar says what ran. In Play mode, changes a method makes are lost on leaving Play mode, as with the Inspector. Nothing is offered for an imported log, an entry without a context object, or one whose object no longer exists, such as a Play mode object after leaving Play mode.
+
 ## Reading in a narrow panel
 
 The Wrap toggle in the toolbar wraps long messages instead of cutting them off, and rows grow to fit the whole message, line breaks included; only a message past 20,000 characters is clipped in the row, with a note saying how much more the detail pane holds. The severity icon, time and frame stay aligned with the first line, and stack frames wrap as well. Wrap is a per-user preference, off by default, because fixed-height rows are cheaper and most messages fit on one line in a wide window. When the window is too narrow for the toolbar, the search field and the severity toggles move to a second line together rather than being clipped on the right.
