@@ -44,11 +44,11 @@ The search field takes a small query language. Terms are joined by an implicit A
 | `in:stack` | Text and regex terms also search stack traces |
 | `A OR B` | Either side; binds tighter than the implicit AND |
 
-Session markers always show, whatever the query, so the stream keeps its shape; the "Domain reloaded" divider is the exception, hidden by default and listed again through File > "Show domain reloads" or the Preferences page. A query that cannot be parsed matches nothing and says why in the status bar.
+Session markers always show, whatever the query, so the stream keeps its shape; the "Domain reloaded" divider is the exception, hidden by default and listed again through File > "Show domain reloads" or the settings page. A query that cannot be parsed matches nothing and says why in the status bar.
 
 ## Channel chips
 
-The row of chips under the toolbar sizes itself to its chips, up to about three rows, and scrolls beyond that. Drag the bar's bottom edge to give the chips more or less room; the height is a per-user preference, and a double-click on the edge hands the sizing back. File > "Channel chips", or the same switch on the Preferences page, hides the row altogether. Up to 32 chips show before a "+N more" summary; search reaches the rest.
+The row of chips under the toolbar sizes itself to its chips, up to about three rows, and scrolls beyond that. Drag the bar's bottom edge to give the chips more or less room; the height is a per-user preference, and a double-click on the edge hands the sizing back. File > "Channel chips", or the same switch on the settings page, hides the row altogether. Up to 32 chips show before a "+N more" summary; search reaches the rest.
 
 ## Selecting rows
 
@@ -60,7 +60,11 @@ Channels come from `[Tag]` prefixes, and from tag rules for everything else. Rig
 
 ## Settings
 
-Project Settings > Clarity Console holds the settings a team shares through version control. Frame folding lives there and is off by default, so every frame shows as it does in the stock console. Turn on folding of engine frames (the engine, the Editor, the runtime and Unity's own `Unity.*` packages), folding of frames compiled from installed packages under `Library/PackageCache` (your embedded and local packages are not affected), or add type-name prefixes of your own to fold, one per line, such as a logging wrapper or an async library, and folded runs collapse into one row that expands on click. The source preview length lives there too: how many lines to show on each side of the line a stack frame points at, zero for just that line, and the hover card length, the same number for the card that appears while the pointer rests on a frame. The channel pattern is a regular expression whose first group names the channel of a message, `^\[([\w.\- ]{1,64})\]` by default, so `[PlayFabCBSManager] ...` belongs to channel `PlayFabCBSManager`. Changing it re-channels the entries already captured.
+Everything the console lets you set is on one page: Project Settings > Clarity Console, which File > Settings… opens. There is no Preferences page. The page has two halves, each with its own reset.
+
+**Just for you** holds the per-user switches: the theme, the text size (8 to 16 px for the rows; the detail pane runs one size less, and File > Text size steps it too), wrap, channel chips, source under every frame, the Time and Frame columns, domain-reload dividers, Error Pause and the clear-on options. They live in `EditorPrefs` on your machine and are never committed. The toolbar and the File menu change the same switches, and the page follows changes made there.
+
+**Shared with the project** is saved in `ProjectSettings/ClarityConsole.asset`, so commit it and the team gets the same channels, tags, watch rows, folding and ignore rules. Frame folding lives there and is off by default, so every frame shows as it does in the stock console. Turn on folding of engine frames (the engine, the Editor, the runtime and Unity's own `Unity.*` packages), folding of frames compiled from installed packages under `Library/PackageCache` (your embedded and local packages are not affected), or add type-name prefixes of your own to fold, one per line, such as a logging wrapper or an async library, and folded runs collapse into one row that expands on click. The source preview length lives there too: how many lines to show on each side of the line a stack frame points at, zero for just that line, and the hover card length, the same number for the card that appears while the pointer rests on a frame. The channel pattern is a regular expression whose first group names the channel of a message, `^\[([\w.\- ]{1,64})\]` by default, so `[PlayFabCBSManager] ...` belongs to channel `PlayFabCBSManager`. Changing it re-channels the entries already captured.
 
 ## Themes
 
@@ -70,7 +74,7 @@ A theme is one USS file in `Editor/UI/Themes` that assigns the `--cc-*` variable
 
 ## Reading a stack trace
 
-Selecting an entry lists its stack frames, without the console's own capture frames, with infrastructure runs folded when folding is on in Project Settings, and under every frame that has a file and line, a few lines of that file with the frame's line highlighted, in stack order, so the path the error took reads top to bottom without clicking through the frames. The number of lines on each side is the source preview length in Project Settings; a frame whose file cannot be read gets no block. With folding on, a stack made only of infrastructure folds to a single row for a plain log, since a package's or the engine's logging path is boilerplate, but starts unfolded for an error, exception or assertion, where those frames are the whole story. Rest the pointer on a frame or its block and a card floats up with a longer stretch of the file, fifteen lines by default, formatted the same way; it flips to stay inside the window and disappears when the pointer leaves, the pane scrolls or you click. Its length is the hover card length in Project Settings. Double-clicking a frame or its block opens the file in the code editor. Prefer one preview that follows the frame you click? Turn off "Source under every frame" in the File menu or on the Preferences page.
+Selecting an entry lists its stack frames, without the console's own capture frames, with infrastructure runs folded when folding is on in Project Settings, and under every frame that has a file and line, a few lines of that file with the frame's line highlighted, in stack order, so the path the error took reads top to bottom without clicking through the frames. The number of lines on each side is the source preview length in Project Settings; a frame whose file cannot be read gets no block. With folding on, a stack made only of infrastructure folds to a single row for a plain log, since a package's or the engine's logging path is boilerplate, but starts unfolded for an error, exception or assertion, where those frames are the whole story. Rest the pointer on a frame or its block and a card floats up with a longer stretch of the file, fifteen lines by default, formatted the same way; it flips to stay inside the window and disappears when the pointer leaves, the pane scrolls or you click. Its length is the hover card length in Project Settings. Double-clicking a frame or its block opens the file in the code editor. Prefer one preview that follows the frame you click? Turn off "Source under every frame" in the File menu or on the settings page.
 
 ## Following an error's path
 
@@ -82,15 +86,11 @@ A stack only holds the calls in progress when the message was logged, so calls t
 
 The Wrap toggle in the toolbar wraps long messages instead of cutting them off, and rows grow to fit the whole message, line breaks included; only a message past 20,000 characters is clipped in the row, with a note saying how much more the detail pane holds. The severity icon, time and frame stay aligned with the first line, and stack frames wrap as well. Wrap is a per-user preference, off by default, because fixed-height rows are cheaper and most messages fit on one line in a wide window. When the window is too narrow for the toolbar, the search field and the severity toggles move to a second line together rather than being clipped on the right.
 
-The Time and Frame columns are off by default for the same reason: in a docked panel they left little room for the message. Right-click the list header, use File > Columns, or open the Preferences page to show them; the choice is remembered per user and applies to every console window.
-
-## Preferences
-
-Edit > Preferences > Clarity Console gathers the per-user switches in one place: the theme, the text size (8 to 16 px for the rows; the detail pane runs one size less, and File > Text size steps it too), wrap, source under every frame, the Time and Frame columns, Error Pause and the clear-on options, with a reset to defaults. The same switches are reachable from the toolbar and the File menu; the page follows changes made there. Preferences live in `EditorPrefs` and are never committed with the project, unlike Project Settings > Clarity Console, which holds what a team shares.
+The Time and Frame columns are off by default for the same reason: in a docked panel they left little room for the message. Right-click the list header, use File > Columns, or open the settings page to show them; the choice is remembered per user and applies to every console window.
 
 ## Clearing and pausing
 
-The dropdown beside Clear empties the console when entering Play mode, when a recompile starts, or when a player build starts. Clearing also resets the journal, so nothing comes back after the reload. The Error Pause toggle pauses Play mode as soon as an error, exception or assertion is logged, which freezes the game on the frame that went wrong. These four are per-user preferences in `EditorPrefs`, not project settings: they are a personal habit rather than something a team shares.
+The dropdown beside Clear empties the console when entering Play mode, when a recompile starts, or when a player build starts. Clearing also resets the journal, so nothing comes back after the reload. The Error Pause toggle pauses Play mode as soon as an error, exception or assertion is logged, which freezes the game on the frame that went wrong. These four are in the "Just for you" half of the settings page, kept in `EditorPrefs`: they are a personal habit rather than something a team shares.
 
 ## Importing a log file
 
@@ -115,7 +115,7 @@ Right-click a row to silence that exact message or its whole channel. Rules are 
 | Captured entries | `Library/ClarityConsole/journal-*.bin`, segmented, 32 MB budget by default | Domain reload, Play mode, Editor restart, Editor crash up to the last drain |
 | Play session counter | `SessionState` | Domain reload; continues from the journal after a restart |
 | Project settings | `ProjectSettings/ClarityConsole.asset` | Everything; commit it with the project |
-| Preferences (theme, wrap, source blocks, columns, clear-on, Error Pause) | `EditorPrefs` | Everything; per user, not shared |
+| "Just for you" settings (theme, wrap, source blocks, columns, clear-on, Error Pause) | `EditorPrefs` | Everything; per user, not shared |
 
 Clear in the window deletes the journal. Deleting the folder while the Editor is closed has the same effect.
 

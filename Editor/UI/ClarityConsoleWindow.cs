@@ -282,7 +282,7 @@ namespace ClarityConsole.UI
             export.menu.AppendAction("Text size/Larger", _ => ConsolePreferences.TextSize++, _ => ConsolePreferences.TextSize < ConsolePreferences.MaxTextSize ? DropdownMenuAction.Status.Normal : DropdownMenuAction.Status.Disabled);
             export.menu.AppendAction("Text size/Default", _ => ConsolePreferences.TextSize = ConsolePreferences.DefaultTextSize, _ => ConsolePreferences.TextSize == ConsolePreferences.DefaultTextSize ? DropdownMenuAction.Status.Disabled : DropdownMenuAction.Status.Normal);
             export.menu.AppendSeparator();
-            export.menu.AppendAction("Preferences…", _ => SettingsService.OpenUserPreferences(ClarityConsolePreferencesProvider.Path));
+            export.menu.AppendAction("Settings…", _ => SettingsService.OpenProjectSettings(ClarityConsoleSettingsPage.Path));
 
             toolbar.Add(export);
 
@@ -367,7 +367,7 @@ namespace ClarityConsole.UI
                 bindCell = BindSeverityCell,
             });
             // Time and Frame are optional: off by default so a narrow panel is mostly message, switchable
-            // from the header's context menu or the Preferences page.
+            // from the header's context menu or the settings page.
             _timeColumn = new Column
             {
                 name = "time",
@@ -489,7 +489,7 @@ namespace ClarityConsole.UI
             }
 
             evt.menu.AppendSeparator();
-            evt.menu.AppendAction("Manage ignore rules…", _ => SettingsService.OpenProjectSettings("Project/Clarity Console"));
+            evt.menu.AppendAction("Manage ignore rules…", _ => SettingsService.OpenProjectSettings(ClarityConsoleSettingsPage.Path));
         }
 
         /// <summary>Writes the rows currently shown to a file the user picks.</summary>

@@ -1,13 +1,16 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using ClarityConsole.Settings;
 using ClarityConsole.Tests.Settings;
 using ClarityConsole.UI;
 using NUnit.Framework;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace ClarityConsole.Tests.UI
 {
-    internal sealed class ClarityConsolePreferencesProviderTests
+    internal sealed class ClarityConsoleSettingsPageTests
     {
         private PreferenceSnapshot _snapshot;
 
@@ -31,7 +34,7 @@ namespace ClarityConsole.Tests.UI
             ConsolePreferences.Theme = ConsoleThemes.Paper.Id;
 
             var root = new VisualElement();
-            Action detach = ClarityConsolePreferencesProvider.Build(root);
+            Action detach = ClarityConsoleSettingsPage.Build(root);
             try
             {
                 Assert.That(root.Q<Toggle>("time").value, Is.True);
@@ -40,7 +43,7 @@ namespace ClarityConsole.Tests.UI
                 Assert.That(root.Q<Toggle>("chips").value, Is.EqualTo(ConsolePreferences.ShowChannels));
                 Assert.That(root.Q<DropdownField>("theme").value, Is.EqualTo(ConsoleThemes.Paper.DisplayName));
                 Assert.That(root.Q<Button>("reset"), Is.Not.Null);
-                Assert.That(root.Q<Button>("project-settings"), Is.Not.Null, "tag rules live in Project Settings; the page says where");
+                Assert.That(root.Q<Button>("reset-project"), Is.Not.Null, "the shared settings keep a reset of their own");
                 var textSize = root.Q<SliderInt>("text-size");
                 Assert.That(textSize.value, Is.EqualTo(ConsolePreferences.TextSize));
                 Assert.That(textSize.lowValue, Is.EqualTo(ConsolePreferences.MinTextSize));
@@ -57,7 +60,7 @@ namespace ClarityConsole.Tests.UI
         {
             ConsolePreferences.ShowTime = false;
             var root = new VisualElement();
-            Action detach = ClarityConsolePreferencesProvider.Build(root);
+            Action detach = ClarityConsoleSettingsPage.Build(root);
             Toggle time = root.Q<Toggle>("time");
 
             ConsolePreferences.ShowTime = true;
@@ -69,10 +72,39 @@ namespace ClarityConsole.Tests.UI
         }
 
         [Test]
+        public void Page_IsTheOnlyOne_WithPersonalSwitchesAboveTheSharedSettings_AndScrolls()
+        {
+            var root = new VisualElement();
+            Action detach = ClarityConsoleSettingsPage.Build(root);
+            try
+            {
+                ScrollView page = root.Q<ScrollView>("page");
+                Assert.That(page, Is.Not.Null, "the settings window does not scroll a provider's page, so the page scrolls itself");
+
+                List<string> sections = page.Query<Label>("section").ToList().Select(l => l.text).ToList();
+                Assert.That(sections, Is.EqualTo(new[] { "Just for you", "Shared with the project" }));
+
+                List<string> titles = page.contentContainer.Children().OfType<Label>()
+                    .Where(l => l.name != "section" && l.style.unityFontStyleAndWeight.value == FontStyle.Bold)
+                    .Select(l => l.text).ToList();
+                Assert.That(titles, Is.EqualTo(new[]
+                {
+                    "Look", "Columns", "Behaviour",
+                    "Channels", "Tags", "Watch rows", "Stack frames", "Ignored messages",
+                }));
+                Assert.That(ClarityConsoleSettingsPage.Path, Does.StartWith("Project/"), "not on the Preferences window");
+            }
+            finally
+            {
+                detach();
+            }
+        }
+
+        [Test]
         public void ThemeDropdown_OffersEveryTheme_InRegistryOrder()
         {
             var root = new VisualElement();
-            Action detach = ClarityConsolePreferencesProvider.Build(root);
+            Action detach = ClarityConsoleSettingsPage.Build(root);
             try
             {
                 var dropdown = root.Q<DropdownField>("theme");
