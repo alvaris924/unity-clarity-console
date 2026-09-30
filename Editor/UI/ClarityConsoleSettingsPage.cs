@@ -98,7 +98,7 @@ namespace ClarityConsole.UI
             AddToggle(root, refreshers, "clear-on-play", "Clear on Play", () => ConsolePreferences.ClearOnPlay, v => ConsolePreferences.ClearOnPlay = v);
             AddToggle(root, refreshers, "clear-on-recompile", "Clear on Recompile", () => ConsolePreferences.ClearOnRecompile, v => ConsolePreferences.ClearOnRecompile = v);
             AddToggle(root, refreshers, "clear-on-build", "Clear on Build", () => ConsolePreferences.ClearOnBuild, v => ConsolePreferences.ClearOnBuild = v);
-            AddToggle(root, refreshers, "report-after-play", "Report after Play", () => ConsolePreferences.ReportAfterPlay, v => ConsolePreferences.ReportAfterPlay = v);
+            AddToggle(root, refreshers, "report-after-play", "Open report after each Play run", () => ConsolePreferences.ReportAfterPlay, v => ConsolePreferences.ReportAfterPlay = v);
             AddHelp(root, "Opens the session report as Play mode ends: how long the run took, its errors and warnings, the first error, and the chattiest messages. File > Session report opens it any time.");
 
             var reset = new Button(ConsolePreferences.ResetToDefaults)

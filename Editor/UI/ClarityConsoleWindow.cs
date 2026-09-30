@@ -35,7 +35,6 @@ namespace ClarityConsole.UI
         private MultiColumnListView _list;
         private ScrollView _listScrollView;
         private ToolbarToggle _collapseToggle;
-        private ToolbarToggle _wrapToggle;
         private Column _timeColumn;
         private Column _frameColumn;
         private Column _countColumn;
@@ -234,19 +233,18 @@ namespace ClarityConsole.UI
             AppendPreferenceToggle(clearOptions, "Clear on Build", () => ConsolePreferences.ClearOnBuild, v => ConsolePreferences.ClearOnBuild = v);
             toolbar.Add(clearOptions);
 
+            toolbar.Add(BuildToolbarSeparator());
+
+            // The two switches flipped during a playtest stay on the bar; everything else is in a menu.
+            _collapseToggle = new ToolbarToggle { text = "Collapse" };
+            _collapseToggle.tooltip = "Show identical messages once, with a count.";
+            _collapseToggle.RegisterValueChangedCallback(evt => _viewModel.Collapse = evt.newValue);
+            toolbar.Add(_collapseToggle);
+
             _errorPauseToggle = new ToolbarToggle { text = "Error Pause", value = ConsolePreferences.ErrorPause };
             _errorPauseToggle.tooltip = "Pause Play mode as soon as an error, exception or assertion is logged.";
             _errorPauseToggle.RegisterValueChangedCallback(evt => ConsolePreferences.ErrorPause = evt.newValue);
             toolbar.Add(_errorPauseToggle);
-
-            _collapseToggle = new ToolbarToggle { text = "Collapse" };
-            _collapseToggle.RegisterValueChangedCallback(evt => _viewModel.Collapse = evt.newValue);
-            toolbar.Add(_collapseToggle);
-
-            _wrapToggle = new ToolbarToggle { text = "Wrap", value = ConsolePreferences.WrapMessages };
-            _wrapToggle.tooltip = "Wrap long messages so nothing is cut off in a narrow window. Rows grow as needed.";
-            _wrapToggle.RegisterValueChangedCallback(evt => ConsolePreferences.WrapMessages = evt.newValue);
-            toolbar.Add(_wrapToggle);
 
             if (IsImport)
             {
@@ -254,40 +252,9 @@ namespace ClarityConsole.UI
                 _errorPauseToggle.SetEnabled(false);
             }
 
-            var export = new ToolbarMenu { text = "File" };
-            export.tooltip = "Open a log file from a build or a device, or write the rows currently shown to one.";
-            export.menu.AppendAction("Open log file…", _ => OpenLogFile());
-            export.menu.AppendSeparator();
-            export.menu.AppendAction("Save as text…", _ => SaveVisible(ExportFormat.Text));
-            export.menu.AppendAction("Save as Markdown…", _ => SaveVisible(ExportFormat.Markdown));
-            export.menu.AppendAction("Save as JSON…", _ => SaveVisible(ExportFormat.Json));
-            export.menu.AppendSeparator();
-            export.menu.AppendAction("Copy all shown", _ => CopyVisible());
-            export.menu.AppendSeparator();
-            export.menu.AppendAction("Session report…", _ => SessionReportWindow.OpenLatest());
-            AppendPreferenceToggle(export, "Report after Play", () => ConsolePreferences.ReportAfterPlay, v => ConsolePreferences.ReportAfterPlay = v);
-            export.menu.AppendSeparator();
-            foreach (ConsoleTheme theme in ConsoleThemes.All)
-            {
-                ConsoleTheme candidate = theme;
-                export.menu.AppendAction(
-                    "Theme/" + candidate.DisplayName,
-                    _ => ConsolePreferences.Theme = candidate.Id,
-                    _ => ReferenceEquals(_theme, candidate) ? DropdownMenuAction.Status.Checked : DropdownMenuAction.Status.Normal);
-            }
-
-            AppendPreferenceToggle(export, "Channel chips", () => ConsolePreferences.ShowChannels, v => ConsolePreferences.ShowChannels = v);
-            AppendPreferenceToggle(export, "Columns/Time", () => ConsolePreferences.ShowTime, v => ConsolePreferences.ShowTime = v);
-            AppendPreferenceToggle(export, "Columns/Frame", () => ConsolePreferences.ShowFrame, v => ConsolePreferences.ShowFrame = v);
-            AppendPreferenceToggle(export, "Source under every frame", () => ConsolePreferences.InlineSource, v => ConsolePreferences.InlineSource = v);
-            AppendPreferenceToggle(export, "Show domain reloads", () => ConsolePreferences.ShowDomainReloads, v => ConsolePreferences.ShowDomainReloads = v);
-            export.menu.AppendAction("Text size/Smaller", _ => ConsolePreferences.TextSize--, _ => ConsolePreferences.TextSize > ConsolePreferences.MinTextSize ? DropdownMenuAction.Status.Normal : DropdownMenuAction.Status.Disabled);
-            export.menu.AppendAction("Text size/Larger", _ => ConsolePreferences.TextSize++, _ => ConsolePreferences.TextSize < ConsolePreferences.MaxTextSize ? DropdownMenuAction.Status.Normal : DropdownMenuAction.Status.Disabled);
-            export.menu.AppendAction("Text size/Default", _ => ConsolePreferences.TextSize = ConsolePreferences.DefaultTextSize, _ => ConsolePreferences.TextSize == ConsolePreferences.DefaultTextSize ? DropdownMenuAction.Status.Disabled : DropdownMenuAction.Status.Normal);
-            export.menu.AppendSeparator();
-            export.menu.AppendAction("Settings…", _ => SettingsService.OpenProjectSettings(ClarityConsoleSettingsPage.Path));
-
-            toolbar.Add(export);
+            toolbar.Add(BuildToolbarSeparator());
+            toolbar.Add(BuildFileMenu());
+            toolbar.Add(BuildViewMenu());
 
             toolbar.Add(new ToolbarSpacer { flex = true });
 
@@ -322,6 +289,64 @@ namespace ClarityConsole.UI
         }
 
         /// <summary>A menu item that reads and writes a preference, showing a tick when it is on.</summary>
+        /// <summary>
+        /// File: logs in and out of the console, and the session report, which is a summary of the log.
+        /// </summary>
+        private ToolbarMenu BuildFileMenu()
+        {
+            var file = new ToolbarMenu { text = "File" };
+            file.tooltip = "Open a log file, save or copy the rows shown, or open the session report.";
+            file.menu.AppendAction("Open log file…", _ => OpenLogFile());
+            file.menu.AppendSeparator();
+            file.menu.AppendAction("Save as text…", _ => SaveVisible(ExportFormat.Text));
+            file.menu.AppendAction("Save as Markdown…", _ => SaveVisible(ExportFormat.Markdown));
+            file.menu.AppendAction("Save as JSON…", _ => SaveVisible(ExportFormat.Json));
+            file.menu.AppendAction("Copy all shown", _ => CopyVisible());
+            file.menu.AppendSeparator();
+            file.menu.AppendAction(
+                "Session report…",
+                _ => SessionReportWindow.OpenLatest(),
+                _ => IsImport ? DropdownMenuAction.Status.Disabled : DropdownMenuAction.Status.Normal);
+            AppendPreferenceToggle(file, "Open report after each Play run", () => ConsolePreferences.ReportAfterPlay, v => ConsolePreferences.ReportAfterPlay = v);
+            return file;
+        }
+
+        /// <summary>View: how the console looks, ending with the settings page that holds all of it.</summary>
+        private ToolbarMenu BuildViewMenu()
+        {
+            var view = new ToolbarMenu { text = "View" };
+            view.tooltip = "Wrap, chips, columns, text size, theme and the settings page.";
+            AppendPreferenceToggle(view, "Wrap long messages", () => ConsolePreferences.WrapMessages, v => ConsolePreferences.WrapMessages = v);
+            AppendPreferenceToggle(view, "Channel chips", () => ConsolePreferences.ShowChannels, v => ConsolePreferences.ShowChannels = v);
+            AppendPreferenceToggle(view, "Source under every frame", () => ConsolePreferences.InlineSource, v => ConsolePreferences.InlineSource = v);
+            AppendPreferenceToggle(view, "Domain reloads", () => ConsolePreferences.ShowDomainReloads, v => ConsolePreferences.ShowDomainReloads = v);
+            AppendPreferenceToggle(view, "Columns/Time", () => ConsolePreferences.ShowTime, v => ConsolePreferences.ShowTime = v);
+            AppendPreferenceToggle(view, "Columns/Frame", () => ConsolePreferences.ShowFrame, v => ConsolePreferences.ShowFrame = v);
+            view.menu.AppendAction("Text size/Smaller", _ => ConsolePreferences.TextSize--, _ => ConsolePreferences.TextSize > ConsolePreferences.MinTextSize ? DropdownMenuAction.Status.Normal : DropdownMenuAction.Status.Disabled);
+            view.menu.AppendAction("Text size/Larger", _ => ConsolePreferences.TextSize++, _ => ConsolePreferences.TextSize < ConsolePreferences.MaxTextSize ? DropdownMenuAction.Status.Normal : DropdownMenuAction.Status.Disabled);
+            view.menu.AppendAction("Text size/Default", _ => ConsolePreferences.TextSize = ConsolePreferences.DefaultTextSize, _ => ConsolePreferences.TextSize == ConsolePreferences.DefaultTextSize ? DropdownMenuAction.Status.Disabled : DropdownMenuAction.Status.Normal);
+            foreach (ConsoleTheme theme in ConsoleThemes.All)
+            {
+                ConsoleTheme candidate = theme;
+                view.menu.AppendAction(
+                    "Theme/" + candidate.DisplayName,
+                    _ => ConsolePreferences.Theme = candidate.Id,
+                    _ => ReferenceEquals(_theme, candidate) ? DropdownMenuAction.Status.Checked : DropdownMenuAction.Status.Normal);
+            }
+
+            view.menu.AppendSeparator();
+            view.menu.AppendAction("Settings…", _ => SettingsService.OpenProjectSettings(ClarityConsoleSettingsPage.Path));
+            return view;
+        }
+
+        /// <summary>A thin rule between groups of toolbar controls.</summary>
+        private static VisualElement BuildToolbarSeparator()
+        {
+            var separator = new VisualElement { pickingMode = PickingMode.Ignore };
+            separator.AddToClassList("cc-toolbar-separator");
+            return separator;
+        }
+
         private static void AppendPreferenceToggle(ToolbarMenu menu, string label, Func<bool> get, Action<bool> set)
         {
             menu.menu.AppendAction(
@@ -1020,7 +1045,6 @@ namespace ClarityConsole.UI
             _errorPauseToggle?.SetValueWithoutNotify(ConsolePreferences.ErrorPause);
 
             bool wrap = ConsolePreferences.WrapMessages;
-            _wrapToggle?.SetValueWithoutNotify(wrap);
             if (wrap != Wraps)
             {
                 ApplyWrap(wrap);

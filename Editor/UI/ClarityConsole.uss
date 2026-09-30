@@ -38,6 +38,14 @@
     height: 20px;
 }
 
+/* A thin rule between groups: clearing, the playtest switches, then the menus. */
+.cc-toolbar > .cc-toolbar-separator {
+    width: 1px;
+    height: 12px;
+    margin: 4px 4px 0 4px;
+    background-color: var(--cc-border);
+}
+
 .cc-toolbar-right {
     flex-direction: row;
     flex-grow: 1;
